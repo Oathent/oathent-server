@@ -1,0 +1,55 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id       Int           @id
+  email    String        @unique
+  username String?
+  apps     Application[]
+  auths     Auth[]
+
+  // flags
+  verified Boolean @default(false)
+  admin    Boolean @default(false)
+}
+
+model Application {
+  id         Int        @id
+  name       String     @unique
+  avatarPath String?
+  owner      User       @relation(fields: [ownerId], references: [id])
+  ownerId    Int        @map("userId")
+  redirects  Redirect[]
+  auths      Auth[]
+
+  // flags
+  bypassScopes Boolean @default(false)
+}
+
+model Redirect {
+  id            Int          @id
+  uri           String
+  Application   Application? @relation(fields: [applicationId], references: [id])
+  applicationId Int?
+
+  @@unique([uri, applicationId])
+}
+
+model Auth {
+  token String @id
+  scope Int    @default(0)
+
+  app           Application @relation(fields: [applicationId], references: [id])
+  user          User        @relation(fields: [userId], references: [id])
+  applicationId Int
+  userId        Int
+}
