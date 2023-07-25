@@ -1,3 +1,5 @@
+import { MAX_SCOPE } from "./auth/constants";
+
 let snowflakeInc = 0;
 const incrementWidth = 6;
 const epoch = new Date("2023-01-01 0:00:00").getTime();
@@ -30,3 +32,7 @@ export const timeStrToMillis = (timeString: string) => timeString.match(/\d+\s?\
         }
         return acc;
     }, 0);
+
+export function limitScopeToMax(scope: number) {
+    return scope & MAX_SCOPE;
+}
