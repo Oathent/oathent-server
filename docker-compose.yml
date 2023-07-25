@@ -1,5 +1,7 @@
 services:
   db:
-      image: postgres:15
-      env_file:
-        - "db.env"
+    image: postgres:15
+    env_file:
+      - "db.env"
+    ports:
+      - 5432:5432

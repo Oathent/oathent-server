@@ -11,11 +11,14 @@ datasource db {
 }
 
 model User {
-  id       Int           @id
-  email    String        @unique
-  username String?
-  apps     Application[]
-  auths     Auth[]
+  id            BigInt        @id
+  email         String        @unique
+  username      String        @unique
+  passHash      String?
+  lastRevoke    DateTime?
+  refreshTokens String[]
+  apps          Application[]
+  auths         Auth[]
 
   // flags
   verified Boolean @default(false)
@@ -23,33 +26,33 @@ model User {
 }
 
 model Application {
-  id         Int        @id
-  name       String     @unique
-  avatarPath String?
-  owner      User       @relation(fields: [ownerId], references: [id])
-  ownerId    Int        @map("userId")
-  redirects  Redirect[]
-  auths      Auth[]
+  id        BigInt     @id
+  name      String     @unique
+  avatarUrl String?    @map("avatarPath")
+  owner     User       @relation(fields: [ownerId], references: [id])
+  ownerId   BigInt     @map("userId")
+  redirects Redirect[]
+  auths     Auth[]
 
   // flags
   bypassScopes Boolean @default(false)
 }
 
 model Redirect {
-  id            Int          @id
-  uri           String
-  Application   Application? @relation(fields: [applicationId], references: [id])
-  applicationId Int?
+  id          BigInt       @id
+  uri         String
+  Application Application? @relation(fields: [appId], references: [id])
+  appId       BigInt?      @map("applicationId")
 
-  @@unique([uri, applicationId])
+  @@unique([uri, appId])
 }
 
 model Auth {
-  token String @id
-  scope Int    @default(0)
+  id          BigInt       @id
+  User        User?        @relation(fields: [userId], references: [id])
+  userId      BigInt?
+  Application Application? @relation(fields: [appId], references: [id])
+  appId       BigInt?      @map("applicationId")
 
-  app           Application @relation(fields: [applicationId], references: [id])
-  user          User        @relation(fields: [userId], references: [id])
-  applicationId Int
-  userId        Int
+  jwtSecret String
 }
