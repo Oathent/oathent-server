@@ -3,7 +3,7 @@ import { JwtService } from '@nestjs/jwt';
 import { Auth, PrismaClient } from '@prisma/client';
 import { randomBytes } from 'crypto';
 import { Scopes, jwtConstants } from 'src/auth/constants';
-import { createSnowflake } from 'src/common';
+import { createSnowflake, limitScopeToMax } from 'src/common';
 import { UsersService } from 'src/users/users.service';
 import { addDeviceCodeInfo, getDeviceCodeInfo, getDeviceCodeStatus, setDeviceCodeStatus } from './deviceCodes';
 
@@ -52,7 +52,7 @@ export class OauthService {
             typ: 'c',
             sub: user.id,
             app: appId,
-            scp: scope,
+            scp: limitScopeToMax(scope),
         };
 
         return {
@@ -103,7 +103,7 @@ export class OauthService {
             sub: user.id,
             usr: user.username,
             app: appId,
-            scp: scope,
+            scp: limitScopeToMax(scope),
         };
 
         const refreshPayload = {
@@ -111,7 +111,7 @@ export class OauthService {
             sub: user.id,
             usr: user.username,
             app: appId,
-            scp: scope,
+            scp: limitScopeToMax(scope),
         };
 
         let accessToken = await this.jwtService.signAsync(accessPayload, { expiresIn: jwtConstants.accessExpiry, secret: authInfo.jwtSecret });

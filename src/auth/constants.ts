@@ -17,3 +17,4 @@ export enum Scopes {
     IDENTIFY = 0,
     EMAIL = 1,
 }
+export const MAX_SCOPE = Scopes.IDENTIFY + Scopes.EMAIL;
