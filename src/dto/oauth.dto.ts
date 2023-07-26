@@ -18,6 +18,10 @@ export class AuthorizeRejectDto {
     @ApiPropertyOptional({ description: 'The device code (if the \'device_code\' flow is being used)' })
     @IsOptional()
     readonly code: string;
+
+    @ApiPropertyOptional({ description: 'The redirect_uri (if the \'auth_code\' flow is being used)' })
+    @IsOptional()
+    readonly redirect: string;
 }
 
 export class CreateDeviceCodeDto {

@@ -17,12 +17,12 @@ export class OauthService {
         private jwtService: JwtService
     ) { }
 
-    async authorizeApp(userId: bigint, appId: bigint, scope: number, flow: string, code?: string): Promise<any> {
+    async authorizeApp(userId: bigint, appId: bigint, scope: number, flow: string, code?: string, redirect?: string): Promise<any> {
         if (!await this.usersService.existsId(userId))
             throw new UnauthorizedException();
 
         if (flow == 'auth_code') {
-            return await this.generateAuthCode(userId, appId, scope);
+            return await this.generateAuthCode(userId, appId, scope, redirect);
         }
         if (flow == 'device_code' && code) {
             return await this.authorizeDeviceCode(userId, appId, scope, code);
@@ -45,8 +45,13 @@ export class OauthService {
         throw new BadRequestException();
     }
 
-    async generateAuthCode(userId: bigint, appId: bigint, scope: number) {
+    async generateAuthCode(userId: bigint, appId: bigint, scope: number, redirect: string) {
         const user = await this.usersService.findOneId(userId);
+        const app = await this.getAppDetails(appId, true);
+
+        if(!app.redirects.find(r => r.uri == redirect))
+            throw new BadRequestException("Invalid redirect URI");
+
         const authInfo = await this.findOrCreateAuthInfo(userId, appId);
 
         const payload = {
@@ -175,8 +180,8 @@ export class OauthService {
         return !!application;
     }
 
-    async getAppDetails(id: bigint): Promise<any> {
-        let app = await prisma.application.findFirst({ where: { id } });
+    async getAppDetails(id: bigint, includeRedirects?: boolean): Promise<any> {
+        let app = await prisma.application.findFirst({ where: { id }, include: { redirects: includeRedirects } });
         if (!app) {
             throw new Error("Application doesn't exist");
         }
@@ -189,6 +194,7 @@ export class OauthService {
             avatarPath: app.avatarUrl,
             bypassScopes: app.bypassScopes,
             useCount,
+            redirects: app.redirects,
         };
     }
 

@@ -33,7 +33,7 @@ export class OauthController {
     @UseAuth()
     @Post('/authorize')
     authorize(@Request() req, @Body() authorizeDto: AuthorizeRejectDto) {
-        return this.oauthService.authorizeApp(req.user.id, authorizeDto.appId, authorizeDto.scope, authorizeDto.flow, req.body.code);
+        return this.oauthService.authorizeApp(req.user.id, authorizeDto.appId, authorizeDto.scope, authorizeDto.flow, authorizeDto.code, authorizeDto.redirect);
     }
 
     @ApiOperation({ summary: 'Reject an OAuth2 application' })
