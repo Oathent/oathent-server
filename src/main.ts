@@ -36,6 +36,6 @@ async function bootstrap() {
         SwaggerModule.setup('docs', app, document);
     }
 
-    await app.listen(3000);
+    await app.listen(process.env.SERVER_PORT && !isNaN(Number(process.env.SERVER_PORT)) ? Number(process.env.SERVER_PORT) : 3000);
 }
 bootstrap();
