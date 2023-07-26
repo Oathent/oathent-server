@@ -1,7 +1,6 @@
 {
   "compilerOptions": {
     "module": "nodenext",
-    "resolveJsonModule": true,
     "declaration": true,
     "removeComments": true,
     "emitDecoratorMetadata": true,

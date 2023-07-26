@@ -1,5 +1,5 @@
 import * as fs from "fs/promises";
-import path from "path";
+import { join } from "path";
 
 interface Scopes {
     [scope: string]: number;
@@ -30,7 +30,7 @@ export let MAX_SCOPE: number;
 
 export let SCOPES: Scopes = DEFAULT_SCOPES;
 
-const CUSTOM_SCOPES_FILE = path.join(__dirname, '../../custom-scopes.json');
+const CUSTOM_SCOPES_FILE = join(__dirname, '../../custom-scopes.json');
 export async function initialiseScopes() {
     if(hasNonPowers(DEFAULT_SCOPES))
         throw new Error("Default scopes contained values that were not powers of 2! This should never happen!");

@@ -1,6 +1,8 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { JwtModule } from '@nestjs/jwt';
+import { jwtConstants } from './auth/constants';
 
 describe('AppController', () => {
   let appController: AppController;
@@ -15,8 +17,8 @@ describe('AppController', () => {
   });
 
   describe('root', () => {
-    it('should return "Hello World!"', () => {
-      expect(appController.getHello()).toBe('Hello World!');
+    it('should return "Oathent v{version}"', () => {
+      expect(appController.getHello()).toBe(`Oathent v${process.env.npm_package_version || '0.0.0'}`);
     });
   });
 });

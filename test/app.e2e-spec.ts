@@ -19,6 +19,6 @@ describe('AppController (e2e)', () => {
     return request(app.getHttpServer())
       .get('/')
       .expect(200)
-      .expect('Hello World!');
+      .expect(`Oathent v${process.env.npm_package_version || '0.0.0'}`);
   });
 });
