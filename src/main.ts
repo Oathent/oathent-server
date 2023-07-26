@@ -11,6 +11,9 @@ configDotenv({
 configDotenv();
 
 async function bootstrap() {
+  if(!process.env.DATABASE_URL)
+    throw new Error("DATABASE_URL was not defined in .env!")
+
   await initialiseScopes();
 
   const app = await NestFactory.create(AppModule);
