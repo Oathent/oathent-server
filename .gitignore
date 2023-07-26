@@ -4,6 +4,7 @@
 
 # Environment files
 *.env
+!example.env
 
 # Logs
 logs
