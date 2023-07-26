@@ -39,3 +39,6 @@ lerna-debug.log*
 
 # Prisma
 prisma/migrations
+
+# Project-specific
+custom-scopes.json

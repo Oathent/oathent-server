@@ -1,7 +1,7 @@
 import { timeStrToMillis } from "src/common";
 import { jwtConstants } from "src/auth/constants";
 
-type DeviceCodeStatus = 'waiting' | 'redeemed' | 'rejected' | 'authed';
+export type DeviceCodeStatus = 'waiting' | 'redeemed' | 'rejected' | 'authed';
 
 interface DeviceCodeInfo {
     status: DeviceCodeStatus,
@@ -40,7 +40,7 @@ async function purgeDeviceCodes() {
     for(const code in deviceCodes) {
         if(deviceCodes[code].status !== 'waiting')
             return delete deviceCodes[code];
-            
+
         if(deviceCodes[code].expiry < Date.now())
             return delete deviceCodes[code];
     }

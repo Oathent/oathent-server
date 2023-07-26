@@ -2,10 +2,11 @@ import { BadRequestException, Injectable, UnauthorizedException } from '@nestjs/
 import { JwtService } from '@nestjs/jwt';
 import { Auth, PrismaClient } from '@prisma/client';
 import { randomBytes } from 'crypto';
-import { Scopes, jwtConstants } from 'src/auth/constants';
+import { jwtConstants } from 'src/auth/constants';
 import { createSnowflake, limitScopeToMax } from 'src/common';
 import { UsersService } from 'src/users/users.service';
 import { addDeviceCodeInfo, getDeviceCodeInfo, getDeviceCodeStatus, setDeviceCodeStatus } from './deviceCodes';
+import { SCOPES, scopeValToName } from 'src/auth/scopes';
 
 const prisma = new PrismaClient();
 
@@ -56,6 +57,7 @@ export class OauthService {
         };
 
         return {
+            success: true,
             code: await this.jwtService.signAsync(payload, { expiresIn: jwtConstants.authCodeExpiry, secret: authInfo.jwtSecret }),
         };
     }
@@ -91,7 +93,7 @@ export class OauthService {
         return { success: true };
     }
 
-    async createToken(userId: bigint, appId: bigint, scope: number, allowRefresh: boolean): Promise<any> {
+    async createToken(userId: bigint, appId: bigint, scope: number): Promise<any> {
         if (!await this.hasAuthInfo(userId, appId))
             throw new UnauthorizedException();
 
@@ -115,7 +117,7 @@ export class OauthService {
         };
 
         let accessToken = await this.jwtService.signAsync(accessPayload, { expiresIn: jwtConstants.accessExpiry, secret: authInfo.jwtSecret });
-        let refreshToken = allowRefresh ? await this.jwtService.signAsync(refreshPayload, { expiresIn: jwtConstants.refreshExpiry, secret: authInfo.jwtSecret }) : undefined;
+        let refreshToken = await this.jwtService.signAsync(refreshPayload, { expiresIn: jwtConstants.refreshExpiry, secret: authInfo.jwtSecret });
 
         return {
             accessToken,
@@ -162,14 +164,10 @@ export class OauthService {
 
     async revokeApp(userId: bigint, appId: bigint): Promise<any> {
         if (!await this.hasAuthInfo(userId, appId))
-            throw new UnauthorizedException();
+            throw new BadRequestException();
 
         let authInfo = await this.getAuthInfo(userId, appId);
         await prisma.auth.delete({ where: { id: authInfo.id } });
-
-        return {
-            success: true,
-        }
     }
 
     async appExists(id: bigint): Promise<boolean> {
@@ -178,7 +176,7 @@ export class OauthService {
     }
 
     async getAppDetails(id: bigint): Promise<any> {
-        let app = await prisma.application.findFirst({ where: { id }, include: { redirects: true } });
+        let app = await prisma.application.findFirst({ where: { id } });
         if (!app) {
             throw new Error("Application doesn't exist");
         }
@@ -191,20 +189,19 @@ export class OauthService {
             avatarPath: app.avatarUrl,
             bypassScopes: app.bypassScopes,
             useCount,
-            redirects: app.redirects
         };
     }
 
     async getScopeStrings(scope: number): Promise<any> {
-        let scopeStrs = [Scopes[0]];
+        let scopeStrs = [scopeValToName(0)];
 
         for (var mask = 1 << 7; mask; mask >>= 1) {
             let bit = scope & mask;
-            if (bit && Scopes[bit])
-                scopeStrs.push(Scopes[bit]);
+            if (bit && scopeValToName(bit))
+                scopeStrs.push(scopeValToName(bit));
         }
 
-        return scopeStrs;
+        return scopeStrs.sort((a, b) => SCOPES[a] - SCOPES[b]);
     }
 
     async createDeviceCode(ip: string, seed: string): Promise<any> {
@@ -230,6 +227,33 @@ export class OauthService {
 
         setDeviceCodeStatus(code, 'redeemed');
         let { userId, appId, scope } = getDeviceCodeInfo(code);
-        return await this.createToken(userId, appId, scope, true)
+        return await this.createToken(userId, appId, scope)
+    }
+
+    async refreshToken(userId: bigint, appId: bigint, scope: number): Promise<any> {
+        if (!await this.usersService.existsId(userId))
+            throw new UnauthorizedException();
+
+        if (!await this.hasAuthInfo(userId, appId))
+            return { success: false };
+
+        let authInfo = await this.getAuthInfo(userId, appId);
+
+        const user = await this.usersService.findOneId(userId);
+
+        const accessPayload = {
+            typ: 'a',
+            sub: user.id,
+            usr: user.username,
+            app: appId,
+            scp: limitScopeToMax(scope),
+        };
+
+        let accessToken = await this.jwtService.signAsync(accessPayload, { expiresIn: jwtConstants.accessExpiry, secret: authInfo.jwtSecret });
+
+        return {
+            success: true,
+            accessToken,
+        };
     }
 }

@@ -1,9 +1,12 @@
-import { Request, Body, Controller, Post, HttpCode, HttpStatus, Get, UnauthorizedException } from '@nestjs/common';
+import { Request, Body, Controller, Post, HttpCode, HttpStatus } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { Token, UseAuth } from './auth.guard';
 import { UsersService } from 'src/users/users.service';
-import { Scopes } from './constants';
+import { AuthResponse, AuthRefreshResponse } from '../entities/auth.entity'
+import { ApiTags, ApiOperation, ApiConflictResponse, ApiBadRequestResponse, ApiOkResponse } from '@nestjs/swagger';
+import { LoginDto, RegisterDto } from 'src/dto/auth.dto';
 
+@ApiTags('auth')
 @Controller('auth')
 export class AuthController {
     constructor(
@@ -11,34 +14,35 @@ export class AuthController {
         private usersService: UsersService,
     ) { }
 
+    @ApiOperation({ summary: 'Login to an existing account' })
+    @ApiOkResponse({ description: 'Account tokens', type: AuthResponse })
     @HttpCode(HttpStatus.OK)
     @Post('login')
-    signIn(@Body() signInDto: Record<string, any>) {
-        return this.authService.signIn(signInDto.username, signInDto.password);
+    signIn(@Body() loginDto: LoginDto) {
+        return this.authService.signIn(loginDto.username, loginDto.password);
     }
 
+    @ApiOperation({ summary: 'Register to to create a new account' })
+    @ApiOkResponse({ description: 'Account tokens', type: AuthResponse })
+    @ApiBadRequestResponse({ description: 'Bad request' })
+    @ApiConflictResponse({ description: 'Conflict' })
     @HttpCode(HttpStatus.OK)
     @Post('register')
-    createAccount(@Body() registerDto: Record<string, any>) {
+    createAccount(@Body() registerDto: RegisterDto) {
         return this.authService.createAccount(registerDto.username, registerDto.email, registerDto.password);
     }
 
-    @UseAuth(Token.ACCESS, [Scopes.EMAIL])
-    @Get('profile')
-    getProfile(@Request() req) {
-        return req.user;
-    }
-
-    @UseAuth(Token.REFRESH)
+    @ApiOperation({ summary: 'Refresh account access token' })
+    @ApiOkResponse({ description: 'Access token', type: AuthRefreshResponse })
+    @UseAuth(Token.REFRESH, { account: true })
     @Post('refresh')
     refreshToken(@Request() req) {
-        if (req.auth.app)
-            throw new UnauthorizedException();
-
         return this.authService.refreshToken(req.user.id);
     }
 
-    @UseAuth()
+    @ApiOperation({ summary: 'Revokes all access and refresh tokens for the account' })
+    @ApiOkResponse({ description: 'Success' })
+    @UseAuth(Token.ACCESS, { account: true })
     @Post('revoke')
     revokeTokens(@Request() req) {
         return this.usersService.revokeTokens(req.user.id);

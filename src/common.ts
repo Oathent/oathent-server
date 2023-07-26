@@ -1,4 +1,4 @@
-import { MAX_SCOPE } from "./auth/constants";
+import { MAX_SCOPE } from "./auth/scopes";
 
 let snowflakeInc = 0;
 const incrementWidth = 6;

@@ -8,14 +8,17 @@ import {
     applyDecorators,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { Scopes, jwtConstants } from './constants';
+import { jwtConstants } from './constants';
 import { Request } from 'express';
 import { UsersService } from 'src/users/users.service';
 import { Reflector } from '@nestjs/core';
 import { OauthService } from 'src/oauth/oauth.service';
+import { ApiBearerAuth, ApiExtension, ApiForbiddenResponse, ApiOperation, ApiProperty } from '@nestjs/swagger';
+import { SCOPES, filterScopes } from './scopes';
 
 export const AUTH_KEY_TYPE = 'authKeyType';
-export const AUTH_SCOPES = 'authScopes';
+export const AUTH_OPT_SCOPES = 'authOptScopes';
+export const AUTH_OPT_ACCOUNT = 'authOptAccount';
 
 export enum Token {
     ACCESS = 'a',
@@ -24,10 +27,33 @@ export enum Token {
     DEVICE_CODE = 'd',
 };
 
-export const UseAuth = (type?: Token, scopes?: Scopes[]) => {
+const tokenNames = {
+    [Token.ACCESS]: 'access token',
+    [Token.REFRESH]: 'refresh token',
+    [Token.CODE]: 'auth code',
+    [Token.DEVICE_CODE]: 'device code',
+}
+
+export const UseAuth = (type?: Token, opts?: { account?: boolean, scopes?: string[] }) => {
+    let scopes = filterScopes(opts?.scopes);
+    let apiDecorators: any[] = [
+        ApiForbiddenResponse({ description: 'Forbidden' }),
+    ];
+
+    if (scopes.length > 0)
+        apiDecorators.push(ApiOperation({ description: `**Required scopes:** ${scopes.join(", ")}` }));
+
+    if (type === Token.ACCESS || type === Token.REFRESH)
+        apiDecorators.push(ApiBearerAuth(`Account ${tokenNames[type]}`));
+
+    if (!opts || !opts.account)
+        apiDecorators.push(ApiBearerAuth(`OAuth2 ${tokenNames[type]}`));
+
     return applyDecorators(
+        ...apiDecorators,
         SetMetadata(AUTH_KEY_TYPE, type || Token.ACCESS),
-        SetMetadata(AUTH_SCOPES, scopes || []),
+        SetMetadata(AUTH_OPT_SCOPES, scopes),
+        SetMetadata(AUTH_OPT_ACCOUNT, opts?.account || false),
         UseGuards(AuthGuard),
     );
 };
@@ -52,13 +78,17 @@ export class AuthGuard implements CanActivate {
                 context.getHandler(),
                 context.getClass(),
             ]);
-            const authScopes = this.reflector.getAllAndOverride<Scopes[]>(AUTH_SCOPES, [
+            const authOptScopes = this.reflector.getAllAndOverride<string[]>(AUTH_OPT_SCOPES, [
+                context.getHandler(),
+                context.getClass(),
+            ]);
+            const authOptAccount = this.reflector.getAllAndOverride<boolean>(AUTH_OPT_ACCOUNT, [
                 context.getHandler(),
                 context.getClass(),
             ]);
 
             let data = await this.jwtService.decode(token);
-            if(typeof data == 'string')
+            if (typeof data == 'string')
                 throw new UnauthorizedException();
 
             let secret;
@@ -77,13 +107,12 @@ export class AuthGuard implements CanActivate {
                         userId: data.sub,
                         appId: data.app,
                         scope: data.scp,
-                        allowRefresh: data.ref,
                     };
                     break;
             }
 
             if (data.app) {
-                if (!await this.oauthService.hasAuthInfo(data.sub, data.app))
+                if (authOptAccount || !await this.oauthService.hasAuthInfo(data.sub, data.app))
                     throw new UnauthorizedException();
 
                 let authInfo = await this.oauthService.getAuthInfo(data.sub, data.app);
@@ -92,25 +121,24 @@ export class AuthGuard implements CanActivate {
 
             const payload = await this.jwtService.verifyAsync(token, { secret });
 
-            
-            if(payload.typ != authKeyType || payload.app && authScopes.reduce((p: boolean, c: Scopes) => p && (payload.scp & c) !== c, false))
+            if (payload.typ != authKeyType || payload.app && authOptScopes.reduce((p: boolean, c: string) => p || (payload.scp & SCOPES[c]) !== SCOPES[c], false))
                 throw new UnauthorizedException();
-            
-            if(authKeyType === Token.DEVICE_CODE) {
+
+            if (authKeyType === Token.DEVICE_CODE) {
                 request['deviceCode'] = token;
                 return true;
             }
-                
+
             if (!await this.usersService.existsId(payload.sub))
                 throw new UnauthorizedException();
-                
+
             let user = await this.usersService.findOneId(payload.sub);
 
             if (user.lastRevoke && payload.iat <= user.lastRevoke.getTime() / 1000)
                 throw new UnauthorizedException();
 
-            if (authKeyType == Token.REFRESH && !user.refreshTokens.includes(token))
-                throw new UnauthorizedException();
+            // if (authKeyType == Token.REFRESH && !payload.app && !user.refreshTokens.includes(token))
+            //     throw new UnauthorizedException();
 
             request['user'] = {
                 id: user.id,

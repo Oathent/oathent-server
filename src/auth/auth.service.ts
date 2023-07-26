@@ -38,9 +38,13 @@ export class AuthService {
             scp: null,
         };
 
+        let accessToken = await this.jwtService.signAsync(accessPayload, { expiresIn: jwtConstants.accessExpiry });
+        // let refreshToken = await this.usersService.createRefreshToken(user.id, await this.jwtService.signAsync(refreshPayload, { secret: jwtConstants.refreshSecret, expiresIn: jwtConstants.refreshExpiry }));
+        let refreshToken = await this.jwtService.signAsync(refreshPayload, { secret: jwtConstants.refreshSecret, expiresIn: jwtConstants.refreshExpiry });
+
         return {
-            accessToken: await this.jwtService.signAsync(accessPayload, { expiresIn: jwtConstants.accessExpiry }),
-            refreshToken: await this.usersService.createRefreshToken(user.id, await this.jwtService.signAsync(refreshPayload, { secret: jwtConstants.refreshSecret, expiresIn: jwtConstants.refreshExpiry })),
+            accessToken,
+            refreshToken,
         };
     }
 
