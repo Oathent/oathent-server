@@ -4,6 +4,7 @@ import { configDotenv } from 'dotenv';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { ValidationPipe } from '@nestjs/common';
 import { SCOPES, initialiseScopes } from './auth/scopes';
+import * as fs from 'fs/promises';
 
 configDotenv({
     path: 'postgres.env'
@@ -16,7 +17,16 @@ async function bootstrap() {
 
     await initialiseScopes();
 
-    const app = await NestFactory.create(AppModule);
+    let httpsOptions;
+
+    if (!process.env.USE_HTTP || process.env.USE_HTTP.toLowerCase() != "yes") {
+        httpsOptions = {
+            key: await fs.readFile('../secrets/private-key.pem'),
+            cert: await fs.readFile('../secrets/public-certificate.pem'),
+        };
+    }
+
+    const app = await NestFactory.create(AppModule, { httpsOptions });
     app.enableCors();
     app.useGlobalPipes(new ValidationPipe());
 
