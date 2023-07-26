@@ -49,7 +49,7 @@ export class AuthService {
     }
 
     async createAccount(username: string, email: string, pass: string) {
-        if (!username || username.length < 4)
+        if (!username || username.length < 4 || !username.match(process.env.USERNAME_REGEX ? new RegExp(process.env.USERNAME_REGEX, 'gi') : /^[A-Z0-9 ]+$/gi))
             throw new BadRequestException("Invalid username");
 
         if (!email.match(/^.+@.+\.[^@]+$/))
