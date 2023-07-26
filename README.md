@@ -2,7 +2,7 @@
 
 ## Description
 
-[Oathent](https://github.com/Oathent) is an API-based authentication system.
+[Oathent](https://github.com/Oathent) is a REST API authentication system.
 
 It supports modern authentication flows and custom auth scopes.
 
