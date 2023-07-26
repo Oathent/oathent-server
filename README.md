@@ -56,3 +56,7 @@ Create a `custom-scopes.json` file and create new custom scopes within the file.
 }
 ```
 Note: Custom scopes cannot have values under 256 to avoid the possibility of a future update of Oathent interfering with existing custom scopes.
+
+----
+
+Oathent is licensed under the MIT license.
