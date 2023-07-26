@@ -6,7 +6,7 @@ import { jwtConstants } from 'src/auth/constants';
 import { createSnowflake, limitScopeToMax } from 'src/common';
 import { UsersService } from 'src/users/users.service';
 import { addDeviceCodeInfo, getDeviceCodeInfo, getDeviceCodeStatus, setDeviceCodeStatus } from './deviceCodes';
-import { SCOPES, scopeValToName } from 'src/auth/scopes';
+import { MAX_SCOPE, SCOPES, scopeValToName } from 'src/auth/scopes';
 
 const prisma = new PrismaClient();
 
@@ -201,7 +201,9 @@ export class OauthService {
     async getScopeStrings(scope: number): Promise<any> {
         let scopeStrs = [scopeValToName(0)];
 
-        for (var mask = 1 << 7; mask; mask >>= 1) {
+        const numBits = Math.ceil(Math.log2(scope & MAX_SCOPE));
+
+        for (var mask = 1 << numBits; mask; mask >>= 1) {
             let bit = scope & mask;
             if (bit && scopeValToName(bit))
                 scopeStrs.push(scopeValToName(bit));
