@@ -182,21 +182,25 @@ export class OauthService {
     }
 
     async getAppDetails(id: bigint, includeRedirects?: boolean): Promise<any> {
-        let app = await prisma.application.findFirst({ where: { id }, include: { redirects: includeRedirects } });
-        if (!app) {
-            throw new Error("Application doesn't exist");
+        try {
+            let app = await prisma.application.findFirst({ where: { id }, include: { redirects: includeRedirects } });
+            if (!app) {
+                throw new BadRequestException("Application doesn't exist");
+            }
+
+            let useCount = await prisma.auth.count({ where: { appId: app.id } });
+
+            return {
+                id: app.id,
+                name: app.name,
+                avatarPath: app.avatarUrl,
+                bypassScopes: app.bypassScopes,
+                useCount,
+                redirects: app.redirects,
+            };
+        } catch(e) {
+            throw new BadRequestException("Application doesn't exist");
         }
-
-        let useCount = await prisma.auth.count({ where: { appId: app.id } });
-
-        return {
-            id: app.id,
-            name: app.name,
-            avatarPath: app.avatarUrl,
-            bypassScopes: app.bypassScopes,
-            useCount,
-            redirects: app.redirects,
-        };
     }
 
     async getScopeStrings(scope: number): Promise<any> {
