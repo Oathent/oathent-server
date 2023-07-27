@@ -1,4 +1,4 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class AuthResponse {
   @ApiProperty({ description: 'The access token for the account', example: "SOME JWT ACCESS TOKEN" })
@@ -15,8 +15,8 @@ export class ProfileResponse {
   @ApiProperty({ description: 'The username for the account' })
   username: string;
 
-  @ApiProperty({ description: 'The email for the account' })
-  email: string;
+  @ApiPropertyOptional({ description: 'The email for the account (Only returned for account tokens and tokens with the **user:email** scope)' })
+  email?: string;
 
   @ApiProperty({ description: 'Whether the account is verified' })
   verified: boolean;

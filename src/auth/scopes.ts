@@ -65,6 +65,10 @@ export async function initialiseScopes() {
 
 }
 
+export function scopeIncludes(scope: number, name: string) {
+    return SCOPES[name] && (scope & SCOPES[name]) == SCOPES[name];
+}
+
 export function filterScopes(scopes: string[]) {
     if (!scopes)
         return [];
