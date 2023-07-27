@@ -68,6 +68,8 @@ If not disabled in `.env` Swagger docs for the API are hosted at the path `/docs
 
 The docs show all the endpoints available with a description of all request and response payloads.
 
+Custom CSS can be applied to the docs by creating and populating a `swagger.custom.css` file.
+
 ----
 
 Oathent is licensed under the MIT license.

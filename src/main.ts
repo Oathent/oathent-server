@@ -5,6 +5,7 @@ import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { ValidationPipe } from '@nestjs/common';
 import { SCOPES, initialiseScopes } from './auth/scopes';
 import * as fs from 'fs/promises';
+import { existsSync } from 'fs';
 
 configDotenv({
     path: 'postgres.env'
@@ -43,7 +44,11 @@ async function bootstrap() {
             .setDescription(`Authentication and OAuth2 API<br><br>**Scopes:** ${Object.keys(SCOPES).join(', ')}`)
             .build();
         const document = SwaggerModule.createDocument(app, docsConfig);
-        SwaggerModule.setup('docs', app, document);
+        SwaggerModule.setup('docs', app, document, {
+            customCssUrl: "swagger.css",
+            customCss: existsSync("swagger.custom.css") ? await fs.readFile("swagger.custom.css", 'utf-8') : undefined,
+            customSiteTitle: "Oathent API Docs"
+        });
     }
 
     await app.listen(process.env.SERVER_PORT && !isNaN(Number(process.env.SERVER_PORT)) ? Number(process.env.SERVER_PORT) : 3000);

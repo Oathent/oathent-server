@@ -1,0 +1,114 @@
+body {
+    background-color: #0a0a0a;
+}
+
+.swagger-ui {
+    color: #cdcdcd;
+}
+
+.swagger-ui .info .title, .swagger-ui .opblock-tag, .swagger-ui section.models h4 {
+    color: white;
+}
+
+.swagger-ui .info li, .swagger-ui .info p, .swagger-ui .info table {
+    color: #cdcdcd;
+}
+
+.swagger-ui .scheme-container {
+    background: none;
+    box-shadow: none;
+    padding: 0;
+}
+
+.swagger-ui .opblock .opblock-summary-operation-id, .swagger-ui .opblock .opblock-summary-path, .swagger-ui .opblock .opblock-summary-path__deprecated {
+    color: #cdcdcd;
+}
+.swagger-ui .opblock .opblock-summary-description, .swagger-ui .model {
+    color: #bababa;
+}
+
+.swagger-ui .model-toggle::after {
+    background: url("data:image/svg+xml;charset=utf-8,<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\"><path fill=\"white\" d=\"M10 6 8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z\"/></svg>") 50% no-repeat;
+}
+
+.swagger-ui .model-title {
+    color: #cdcdcd;
+}
+
+.brace-open.object {
+    display: block;
+    margin-top: 1em;
+}
+
+.model-box-control > .pointer {
+    vertical-align: middle;
+    display: inline-block;
+}
+
+.opblock-summary .arrow, .opblock-summary .authorization__btn {
+    fill: white;
+}
+
+.swagger-ui .opblock .opblock-section-header {
+    background: none;
+    box-shadow: none;
+}
+
+.swagger-ui .opblock .opblock-section-header h4,
+.swagger-ui .response-col_status,
+.swagger-ui .response-col_links,
+.swagger-ui .tab li {
+    color: #cdcdcd;
+}
+
+.swagger-ui .opblock-description-wrapper p, .swagger-ui .opblock-external-docs-wrapper p, .swagger-ui .opblock-title_normal p,
+.swagger-ui table thead tr td, .swagger-ui table thead tr th {
+    color: #bababa;
+}
+
+.swagger-ui .btn {
+    color: #cdcdcd;
+    border-color: #cdcdcd;
+}
+
+.swagger-ui select {
+    background-color: #030303;
+    color: #cdcdcd;
+    border-color: #cdcdcd;
+}
+
+.topbar {
+    display: none;
+}
+
+.swagger-ui .dialog-ux .modal-ux {
+    background-color: #121212;
+    border-color: #333333;
+}
+
+.swagger-ui .dialog-ux .modal-ux-header h3 {
+    color: white;
+}
+
+.swagger-ui .dialog-ux .modal-ux-content h4 {
+    color: #cdcdcd;
+}
+
+.swagger-ui label {
+    color: #bababa;
+}
+
+.swagger-ui input[type="email"], .swagger-ui input[type="file"], .swagger-ui input[type="password"], .swagger-ui input[type="search"], .swagger-ui input[type="text"], .swagger-ui textarea {
+    background-color: #030303;
+    color: #bababa;
+    border-color: #333333;
+}
+
+.swagger-ui .dialog-ux .modal-ux-header .close-modal {
+    fill: white;
+}
+
+.swagger-ui .dialog-ux .modal-ux-header,
+.swagger-ui .auth-container {
+    border-color: #333333;
+}
