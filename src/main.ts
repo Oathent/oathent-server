@@ -5,6 +5,7 @@ import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { ValidationPipe } from '@nestjs/common';
 import { SCOPES, initialiseScopes } from './auth/scopes';
 import * as fs from 'fs/promises';
+import { initialiseEmail } from './email';
 import { existsSync } from 'fs';
 
 configDotenv({
@@ -17,6 +18,9 @@ async function bootstrap() {
         throw new Error("DATABASE_URL was not defined in .env!")
 
     await initialiseScopes();
+
+    if(!process.env.DISABLE_VERIFICATION || process.env.DISABLE_VERIFICATION != "yes")
+        initialiseEmail();
 
     let httpsOptions;
 

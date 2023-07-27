@@ -25,6 +25,7 @@ export enum Token {
     REFRESH = 'r',
     CODE = 'c',
     DEVICE_CODE = 'd',
+    VERIFY_CODE = 'v',
 };
 
 const tokenNames = {
@@ -32,6 +33,7 @@ const tokenNames = {
     [Token.REFRESH]: 'refresh token',
     [Token.CODE]: 'auth code',
     [Token.DEVICE_CODE]: 'device code',
+    [Token.VERIFY_CODE]: 'verification code',
 }
 
 export const UseAuth = (type?: Token, opts?: { account?: boolean, scopes?: string[] }) => {
