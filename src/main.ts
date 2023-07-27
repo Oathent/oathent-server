@@ -22,9 +22,11 @@ async function bootstrap() {
     if(!process.env.DISABLE_VERIFICATION || process.env.DISABLE_VERIFICATION != "yes")
         initialiseEmail();
 
+    let port = 80;
     let httpsOptions;
 
     if (!process.env.USE_HTTP || process.env.USE_HTTP.toLowerCase() != "yes") {
+        port = 443;
         httpsOptions = {
             key: await fs.readFile('../secrets/private-key.pem'),
             cert: await fs.readFile('../secrets/public-certificate.pem'),
@@ -55,6 +57,6 @@ async function bootstrap() {
         });
     }
 
-    await app.listen(process.env.SERVER_PORT && !isNaN(Number(process.env.SERVER_PORT)) ? Number(process.env.SERVER_PORT) : 3000);
+    await app.listen(process.env.SERVER_PORT && !isNaN(Number(process.env.SERVER_PORT)) ? Number(process.env.SERVER_PORT) : port);
 }
 bootstrap();

@@ -24,23 +24,29 @@ export function initialiseEmail() {
     });
 }
 
+const protocolPorts: { [key: string]: number } = {
+    'http': 80,
+    'https': 443,
+}
+
 export async function sendVerifyEmail(user: User, code: string): Promise<boolean> {
     if (!transporter)
         return false;
 
     try {
-        let verifyUrl = "http://localhost:3000/auth/verify/?code=" + code;
+        let protocol = (process.env.USE_HTTP.toLowerCase() == "yes") ? 'http' : 'https';
+        let verifyUrl = `${protocol}://${process.env.SERVER_ADDRESS || 'localhost'}${(process.env.SERVER_PORT && Number(process.env.SERVER_PORT) == protocolPorts[protocol]) ? ':'+process.env.SERVER_PORT : ''}/auth/verify/?code=${code}`;
         if(process.env.EMAIL_VERIFY_URL)
-            verifyUrl = process.env.EMAIL_VERIFY_URL.includes("{code}") ? process.env.EMAIL_SUBJECT.replace("{code}", code) : `${process.env.EMAIL_VERIFY_URL}?code=${code}`
+            verifyUrl = process.env.EMAIL_VERIFY_URL.includes("{code}") ? process.env.EMAIL_SUBJECT.replaceAll("{code}", code) : `${process.env.EMAIL_VERIFY_URL}?code=${code}`
 
 
         let subject = `Account verification for ${user.username}`;
         if(process.env.EMAIL_SUBJECT)
-            subject = process.env.EMAIL_SUBJECT.includes("{user}") ? process.env.EMAIL_SUBJECT.replace("{user}", user.username) : `${user.username}: ${process.env.EMAIL_SUBJECT}`
+            subject = process.env.EMAIL_SUBJECT.includes("{user}") ? process.env.EMAIL_SUBJECT.replaceAll("{user}", user.username) : `${user.username}: ${process.env.EMAIL_SUBJECT}`
 
-        let html = `Please click this link to verify your account: <a href="${verifyUrl}">${verifyUrl}</a>`;
+        let html = `<p>Please click this link to verify your account:<br><a href="${verifyUrl}">${verifyUrl}</a></p>`;
         if(process.env.EMAIL_HTML)
-            subject = process.env.EMAIL_HTML.includes("{url}") ? process.env.EMAIL_HTML.replace("{url}", verifyUrl) : `${process.env.EMAIL_HTML}<br><a href="${verifyUrl}">Verify</a>`
+            html = process.env.EMAIL_HTML.includes("{url}") ? process.env.EMAIL_HTML.replaceAll("{url}", verifyUrl) : `${process.env.EMAIL_HTML}<br><a href="${verifyUrl}">Verify</a>`
 
         const info = await transporter.sendMail({
             to: user.email,
