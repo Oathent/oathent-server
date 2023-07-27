@@ -143,9 +143,6 @@ export class AuthGuard implements CanActivate {
             if (user.lastRevoke && payload.iat <= user.lastRevoke.getTime() / 1000)
                 throw new UnauthorizedException();
 
-            // if (authKeyType == Token.REFRESH && !payload.app && !user.refreshTokens.includes(token))
-            //     throw new UnauthorizedException();
-
             request['user'] = {
                 id: user.id,
                 username: user.username,

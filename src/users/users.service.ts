@@ -79,30 +79,12 @@ export class UsersService {
         return user;
     }
 
-    // async createRefreshToken(id: bigint, token: string): Promise<String | undefined> {
-    //     const user = await prisma.user.findUnique({ where: { id } })
-
-    //     user.refreshTokens.push(token)
-
-    //     await prisma.user.update({
-    //         where: {
-    //             id,
-    //         },
-    //         data: {
-    //             refreshTokens: user.refreshTokens,
-    //         }
-    //     });
-
-    //     return token;
-    // }
-
     async revokeTokens(id: bigint): Promise<any> {
         await prisma.user.update({
             where: {
                 id,
             },
             data: {
-                refreshTokens: [],
                 lastRevoke: new Date(),
             }
         });
