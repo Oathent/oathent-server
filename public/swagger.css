@@ -62,7 +62,8 @@ body {
 }
 
 .swagger-ui .opblock-description-wrapper p, .swagger-ui .opblock-external-docs-wrapper p, .swagger-ui .opblock-title_normal p,
-.swagger-ui table thead tr td, .swagger-ui table thead tr th {
+.swagger-ui table thead tr td, .swagger-ui table thead tr th,
+.swagger-ui .parameter__name {
     color: #bababa;
 }
 
@@ -104,11 +105,14 @@ body {
     border-color: #333333;
 }
 
-.swagger-ui .dialog-ux .modal-ux-header .close-modal {
+.swagger-ui .dialog-ux .modal-ux-header .close-modal,
+.swagger-ui .expand-methods svg, .swagger-ui .expand-operation svg {
     fill: white;
 }
 
 .swagger-ui .dialog-ux .modal-ux-header,
-.swagger-ui .auth-container {
+.swagger-ui .auth-container,
+.swagger-ui section.models,
+.swagger-ui section.models.is-open h4 {
     border-color: #333333;
 }
