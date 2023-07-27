@@ -72,4 +72,4 @@ Custom CSS can be applied to the docs by creating and populating a `swagger.cust
 
 ----
 
-Oathent is licensed under the MIT license.
+Oathent is licensed under the Mozilla Public License.
