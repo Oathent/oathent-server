@@ -20,7 +20,6 @@ export function initialiseEmail() {
             user: process.env.EMAIL_USER,
             pass: process.env.EMAIL_PASS,
         },
-        logger: true
     });
 }
 
@@ -35,7 +34,7 @@ export async function sendVerifyEmail(user: User, code: string): Promise<boolean
 
     try {
         let protocol = (process.env.USE_HTTP.toLowerCase() == "yes") ? 'http' : 'https';
-        let verifyUrl = `${protocol}://${process.env.SERVER_ADDRESS || 'localhost'}${(process.env.SERVER_PORT && Number(process.env.SERVER_PORT) == protocolPorts[protocol]) ? ':'+process.env.SERVER_PORT : ''}/auth/verify/?code=${code}`;
+        let verifyUrl = `${protocol}://${process.env.SERVER_ADDRESS || 'localhost'}${(process.env.SERVER_PORT && Number(process.env.SERVER_PORT) != protocolPorts[protocol]) ? ':'+process.env.SERVER_PORT : ''}/auth/verify/?code=${code}`;
         if(process.env.EMAIL_VERIFY_URL)
             verifyUrl = process.env.EMAIL_VERIFY_URL.includes("{code}") ? process.env.EMAIL_SUBJECT.replaceAll("{code}", code) : `${process.env.EMAIL_VERIFY_URL}?code=${code}`
 
