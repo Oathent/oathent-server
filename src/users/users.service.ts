@@ -58,6 +58,7 @@ export class UsersService {
                 email,
                 username,
                 passHash,
+                verified: (process.env.DISABLE_VERIFICATION && process.env.DISABLE_VERIFICATION == "yes"),
             }
         });
 
