@@ -38,8 +38,5 @@ lerna-debug.log*
 !.vscode/launch.json
 !.vscode/extensions.json
 
-# Prisma
-prisma/migrations
-
 # Project-specific
 custom-scopes.json

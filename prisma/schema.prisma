@@ -16,7 +16,6 @@ model User {
   username      String        @unique
   passHash      String?
   lastRevoke    DateTime?
-  refreshTokens String[]
   apps          Application[]
   auths         Auth[]
 
@@ -29,7 +28,7 @@ model Application {
   id        BigInt     @id
   name      String     @unique
   avatarUrl String?    @map("avatarPath")
-  owner     User       @relation(fields: [ownerId], references: [id])
+  owner     User       @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   ownerId   BigInt     @map("userId")
   redirects Redirect[]
   auths     Auth[]
@@ -41,18 +40,18 @@ model Application {
 model Redirect {
   id          BigInt       @id
   uri         String
-  Application Application? @relation(fields: [appId], references: [id])
-  appId       BigInt?      @map("applicationId")
+  Application Application @relation(fields: [appId], references: [id], onDelete: Cascade)
+  appId       BigInt      @map("applicationId")
 
   @@unique([uri, appId])
 }
 
 model Auth {
   id          BigInt       @id
-  User        User?        @relation(fields: [userId], references: [id])
-  userId      BigInt?
-  Application Application? @relation(fields: [appId], references: [id])
-  appId       BigInt?      @map("applicationId")
+  User        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId      BigInt
+  Application Application @relation(fields: [appId], references: [id], onDelete: Cascade)
+  appId       BigInt      @map("applicationId")
 
   jwtSecret String
 }
