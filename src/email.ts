@@ -60,8 +60,14 @@ export async function sendVerifyEmail(
         let html = `<p>Please click this link to verify your account:<br><a href="${verifyUrl}">${verifyUrl}</a></p>`;
         if (process.env.EMAIL_HTML)
             html = process.env.EMAIL_HTML.includes('{url}')
-                ? process.env.EMAIL_HTML.replaceAll('{user}', user.username).replaceAll('{url}', verifyUrl)
-                : `${process.env.EMAIL_HTML.replaceAll('{user}', user.username)}<br><a href="${verifyUrl}">Verify</a>`;
+                ? process.env.EMAIL_HTML.replaceAll(
+                      '{user}',
+                      user.username,
+                  ).replaceAll('{url}', verifyUrl)
+                : `${process.env.EMAIL_HTML.replaceAll(
+                      '{user}',
+                      user.username,
+                  )}<br><a href="${verifyUrl}">Verify</a>`;
 
         const info = await transporter.sendMail({
             to: user.email,

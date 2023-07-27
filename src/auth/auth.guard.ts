@@ -25,6 +25,7 @@ import { SCOPES, filterScopes } from './scopes';
 export const AUTH_KEY_TYPE = 'authKeyType';
 export const AUTH_OPT_SCOPES = 'authOptScopes';
 export const AUTH_OPT_ACCOUNT = 'authOptAccount';
+export const AUTH_OPT_VERIFIED = 'authOptVerified';
 
 export enum Token {
     ACCESS = 'a',
@@ -44,7 +45,7 @@ const tokenNames = {
 
 export const UseAuth = (
     type?: Token,
-    opts?: { account?: boolean; scopes?: string[] },
+    opts?: { account?: boolean; scopes?: string[]; verified?: boolean },
 ) => {
     const scopes = filterScopes(opts?.scopes);
     const apiDecorators: any[] = [
@@ -69,6 +70,7 @@ export const UseAuth = (
         SetMetadata(AUTH_KEY_TYPE, type || Token.ACCESS),
         SetMetadata(AUTH_OPT_SCOPES, scopes),
         SetMetadata(AUTH_OPT_ACCOUNT, opts?.account || false),
+        SetMetadata(AUTH_OPT_VERIFIED, opts?.verified || false),
         UseGuards(AuthGuard),
     );
 };
@@ -101,6 +103,10 @@ export class AuthGuard implements CanActivate {
             );
             const authOptAccount = this.reflector.getAllAndOverride<boolean>(
                 AUTH_OPT_ACCOUNT,
+                [context.getHandler(), context.getClass()],
+            );
+            const authOptVerified = this.reflector.getAllAndOverride<boolean>(
+                AUTH_OPT_VERIFIED,
                 [context.getHandler(), context.getClass()],
             );
 
@@ -165,6 +171,9 @@ export class AuthGuard implements CanActivate {
                 throw new UnauthorizedException();
 
             const user = await this.usersService.findOneId(payload.sub);
+
+            if (authOptVerified && !user.verified)
+                throw new UnauthorizedException('Account not verified');
 
             if (
                 user.lastRevoke &&

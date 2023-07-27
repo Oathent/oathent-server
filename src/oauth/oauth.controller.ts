@@ -53,7 +53,7 @@ export class OauthController {
 
     @ApiOperation({ summary: 'Authorize an OAuth2 application' })
     @ApiOkResponse({ description: 'App authorized', type: AuthorizeResponse })
-    @UseAuth()
+    @UseAuth(Token.ACCESS, { verified: true })
     @Post('/authorize')
     authorize(@Request() req, @Body() authorizeDto: AuthorizeRejectDto) {
         return this.oauthService.authorizeApp(
@@ -68,7 +68,7 @@ export class OauthController {
 
     @ApiOperation({ summary: 'Reject an OAuth2 application' })
     @ApiOkResponse({ description: 'App rejected', type: RejectResponse })
-    @UseAuth()
+    @UseAuth(Token.ACCESS, { verified: true })
     @Post('/reject')
     reject(@Request() req, @Body() rejectDto: AuthorizeRejectDto) {
         return this.oauthService.rejectApp(
@@ -96,7 +96,7 @@ export class OauthController {
         summary: 'Generate a new OAuth2 access token using a refresh token',
     })
     @ApiOkResponse({ description: 'Success', type: AuthRefreshResponse })
-    @UseAuth(Token.REFRESH)
+    @UseAuth(Token.REFRESH, { verified: true })
     @Post('refresh')
     refreshToken(@Request() req) {
         return this.oauthService.refreshToken(
@@ -140,7 +140,7 @@ export class OauthController {
     @ApiOperation({ summary: 'Revoke access tokens for an app' })
     @ApiOkResponse({ description: 'Success' })
     @ApiBadRequestResponse({ description: 'Bad Request' })
-    @UseAuth(Token.ACCESS)
+    @UseAuth(Token.ACCESS, { verified: true })
     @Post('/revoke')
     async revoke(@Request() req, @Body() revokeTokenDto: RevokeTokenDto) {
         let appId = req.auth.appId;
