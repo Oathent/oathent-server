@@ -1,9 +1,9 @@
-import { Request, Body, Controller, Post, HttpCode, HttpStatus } from '@nestjs/common';
+import { Request, Body, Controller, Post, HttpCode, HttpStatus, Get, Query } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { Token, UseAuth } from './auth.guard';
 import { UsersService } from 'src/users/users.service';
 import { AuthResponse, AuthRefreshResponse } from '../entities/auth.entity'
-import { ApiTags, ApiOperation, ApiConflictResponse, ApiBadRequestResponse, ApiOkResponse } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiConflictResponse, ApiBadRequestResponse, ApiOkResponse, ApiForbiddenResponse } from '@nestjs/swagger';
 import { LoginDto, RegisterDto } from 'src/dto/auth.dto';
 
 @ApiTags('auth')
@@ -46,5 +46,13 @@ export class AuthController {
     @Post('revoke')
     revokeTokens(@Request() req) {
         return this.usersService.revokeTokens(req.user.id);
+    }
+
+    @ApiOperation({ summary: 'Verifies an account using a verification token' })
+    @ApiOkResponse({ description: 'Success' })
+    @ApiForbiddenResponse({ description: 'Forbidden' })
+    @Get('verify')
+    verifyAccount(@Query('code') code: string) {
+        return this.usersService.verifyAccount(code);
     }
 }

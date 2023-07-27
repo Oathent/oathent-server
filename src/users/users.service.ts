@@ -1,12 +1,18 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, ForbiddenException } from '@nestjs/common';
 import * as argon2 from 'argon2';
 
 import { PrismaClient, User } from '@prisma/client';
 import { createSnowflake } from 'src/common';
+import { jwtConstants } from 'src/auth/constants';
+import { Token } from 'src/auth/auth.guard';
+import { sendVerifyEmail } from 'src/email';
+import { JwtService } from '@nestjs/jwt';
 const prisma = new PrismaClient();
 
 @Injectable()
 export class UsersService {
+    constructor(private readonly jwtService: JwtService) {}
+
     async findOneId(id: bigint): Promise<User | undefined> {
         let user = await prisma.user.findUnique({ where: { id } });
         if (!user) {
@@ -62,6 +68,14 @@ export class UsersService {
             }
         });
 
+        const verifyCodePayload = {
+            typ: Token.VERIFY_CODE,
+            sub: user.id,
+        };
+
+        let code = await this.jwtService.signAsync(verifyCodePayload, { expiresIn: jwtConstants.verifyCodeExpiry, secret: jwtConstants.verifyCodeSecret });
+        await sendVerifyEmail(user, code);
+
         return user;
     }
 
@@ -92,5 +106,27 @@ export class UsersService {
                 lastRevoke: new Date(),
             }
         });
+    }
+
+    async verifyAccount(code: string): Promise<any> {
+        try {
+            let payload = await this.jwtService.verifyAsync(code, { secret: jwtConstants.verifyCodeSecret });
+
+            if (payload.typ != Token.VERIFY_CODE)
+                throw null;
+
+            await prisma.user.update({
+                where: {
+                    id: payload.sub,
+                },
+                data: {
+                    verified: true,
+                }
+            });
+
+            return "Account verified"
+        } catch(e) {
+            throw new ForbiddenException("Verification failed (Perhaps the code was invalid or expired)");
+        }
     }
 }

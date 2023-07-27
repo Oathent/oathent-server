@@ -6,6 +6,8 @@ import {
     UseGuards,
     SetMetadata,
     applyDecorators,
+    Inject,
+    forwardRef,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { jwtConstants } from './constants';
@@ -64,7 +66,9 @@ export const UseAuth = (type?: Token, opts?: { account?: boolean, scopes?: strin
 export class AuthGuard implements CanActivate {
     constructor(
         private jwtService: JwtService,
+        @Inject(forwardRef(() => UsersService))
         private usersService: UsersService,
+        @Inject(forwardRef(() => OauthService))
         private oauthService: OauthService,
         private reflector: Reflector,
     ) { }

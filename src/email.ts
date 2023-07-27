@@ -1,8 +1,5 @@
-import { JwtService } from '@nestjs/jwt';
 import { User } from '@prisma/client';
 import * as nodemailer from 'nodemailer';
-import { jwtConstants } from './auth/constants';
-import { Token } from './auth/auth.guard';
 
 let transporter: nodemailer.Transporter;
 
