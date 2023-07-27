@@ -50,7 +50,7 @@ If you instead intend to use HTTP, set `USE_HTTP` in `.env` to `"yes"`. **This i
 Create a `db.env` file and set configurable values within the file. An example configuration can be found in `db.example.env`.
 
 ### Custom scopes
-Create a `custom-scopes.json` file and create new custom scopes within the file. You may not overwrite default scopes from Oathent and all scope values must be unique powers of 2.
+Create a `custom-scopes.json` file and create new custom scopes within the file. Custom scopes can have any name, however, you may not overwrite default scopes from Oathent and all scope values must be unique powers of 2.
 
 #### Example
 ```json
@@ -64,7 +64,7 @@ Note: Custom scopes cannot have values under 256 to avoid the possibility of a f
 
 ## Docs
 
-If not disabled in `.env` Swagger docs for the API are hosted at the path `/docs` on the auth server.
+If not disabled in `.env`, Swagger docs for the API are hosted at the path `/docs` on the auth server.
 
 The docs show all the endpoints available with a description of all request and response payloads.
 
