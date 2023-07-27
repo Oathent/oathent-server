@@ -9,7 +9,7 @@ export class AppController {
 
     @ApiExcludeEndpoint()
     @Get()
-    getHello(): string {
+    getIndex(): string {
         return this.appService.getIndex();
     }
 

@@ -18,7 +18,7 @@ describe('AppController', () => {
 
   describe('root', () => {
     it('should return "Oathent v{version}"', () => {
-      expect(appController.getHello()).toBe(`Oathent v${process.env.npm_package_version || '0.0.0'}`);
+      expect(appController.getIndex()).toBe(`Oathent v${process.env.npm_package_version || '0.0.0'}`);
     });
   });
 });
