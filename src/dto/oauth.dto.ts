@@ -15,11 +15,16 @@ export class AuthorizeRejectDto {
     @IsNotEmpty()
     readonly flow: string;
 
-    @ApiPropertyOptional({ description: 'The device code (if the \'device_code\' flow is being used)' })
+    @ApiPropertyOptional({
+        description:
+            "The device code (if the 'device_code' flow is being used)",
+    })
     @IsOptional()
     readonly code: string;
 
-    @ApiPropertyOptional({ description: 'The redirect_uri (if the \'auth_code\' flow is being used)' })
+    @ApiPropertyOptional({
+        description: "The redirect_uri (if the 'auth_code' flow is being used)",
+    })
     @IsOptional()
     readonly redirect: string;
 }
@@ -31,6 +36,8 @@ export class CreateDeviceCodeDto {
 }
 
 export class RevokeTokenDto {
-    @ApiPropertyOptional({ description: 'The app ID to revoke (omit if revoking account tokens)' })
+    @ApiPropertyOptional({
+        description: 'The app ID to revoke (omit if revoking account tokens)',
+    })
     readonly appId: bigint;
 }

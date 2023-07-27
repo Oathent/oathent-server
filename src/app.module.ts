@@ -6,12 +6,8 @@ import { UsersModule } from './users/users.module';
 import { OauthModule } from './oauth/oauth.module';
 
 @Module({
-  imports: [
-    AuthModule,
-    UsersModule,
-    OauthModule
-  ],
-  controllers: [AppController],
-  providers: [AppService],
+    imports: [AuthModule, UsersModule, OauthModule],
+    controllers: [AppController],
+    providers: [AppService],
 })
 export class AppModule {}

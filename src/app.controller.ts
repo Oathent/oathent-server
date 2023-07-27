@@ -5,7 +5,7 @@ import { readFile } from 'fs/promises';
 
 @Controller()
 export class AppController {
-    constructor(private readonly appService: AppService) { }
+    constructor(private readonly appService: AppService) {}
 
     @ApiExcludeEndpoint()
     @Get()

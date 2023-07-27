@@ -1,9 +1,25 @@
-import { Request, Body, Controller, Post, HttpCode, HttpStatus, Get, Query } from '@nestjs/common';
+import {
+    Request,
+    Body,
+    Controller,
+    Post,
+    HttpCode,
+    HttpStatus,
+    Get,
+    Query,
+} from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { Token, UseAuth } from './auth.guard';
 import { UsersService } from 'src/users/users.service';
-import { AuthResponse, AuthRefreshResponse } from '../entities/auth.entity'
-import { ApiTags, ApiOperation, ApiConflictResponse, ApiBadRequestResponse, ApiOkResponse, ApiForbiddenResponse } from '@nestjs/swagger';
+import { AuthResponse, AuthRefreshResponse } from '../entities/auth.entity';
+import {
+    ApiTags,
+    ApiOperation,
+    ApiConflictResponse,
+    ApiBadRequestResponse,
+    ApiOkResponse,
+    ApiForbiddenResponse,
+} from '@nestjs/swagger';
 import { LoginDto, RegisterDto } from 'src/dto/auth.dto';
 
 @ApiTags('auth')
@@ -12,7 +28,7 @@ export class AuthController {
     constructor(
         private authService: AuthService,
         private usersService: UsersService,
-    ) { }
+    ) {}
 
     @ApiOperation({ summary: 'Login to an existing account' })
     @ApiOkResponse({ description: 'Account tokens', type: AuthResponse })
@@ -29,7 +45,11 @@ export class AuthController {
     @HttpCode(HttpStatus.OK)
     @Post('register')
     createAccount(@Body() registerDto: RegisterDto) {
-        return this.authService.createAccount(registerDto.username, registerDto.email, registerDto.password);
+        return this.authService.createAccount(
+            registerDto.username,
+            registerDto.email,
+            registerDto.password,
+        );
     }
 
     @ApiOperation({ summary: 'Refresh account access token' })
@@ -40,7 +60,9 @@ export class AuthController {
         return this.authService.refreshToken(req.user.id);
     }
 
-    @ApiOperation({ summary: 'Revokes all access and refresh tokens for the account' })
+    @ApiOperation({
+        summary: 'Revokes all access and refresh tokens for the account',
+    })
     @ApiOkResponse({ description: 'Success' })
     @UseAuth(Token.ACCESS, { account: true })
     @Post('revoke')
