@@ -25,8 +25,8 @@ $ yarn prisma migrate deploy
 ```bash
 # start database
 $ docker compose up
-
-
+```
+```bash
 # development
 $ yarn run start
 
