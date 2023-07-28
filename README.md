@@ -44,9 +44,9 @@ $ yarn run start:prod
 ### Oathent server
 Create a `.env` file and set configurable values within the file. An example configuration can be found in `example.env`.
 
-If you intend to use HTTPS (recommended), put your SSL key pair at the paths `secrets/private-key.pem` and `secrets/public-certificate.pem`.
+If you intend to use HTTPS (recommended for public-facing use), put your SSL key pair at the paths `secrets/private-key.pem` and `secrets/public-certificate.pem`.
 
-If you instead intend to use HTTP, set `USE_HTTP` in `.env` to `"yes"`. **This is not recommended as it introduces the risk of a [man-in-the-middle attack](https://wikipedia.org/wiki/Man-in-the-middle_attack).**
+If you instead intend to use HTTP, set `USE_HTTP` in `.env` to `"yes"`. **In some cases this introduces the risk of a [man-in-the-middle attack](https://wikipedia.org/wiki/Man-in-the-middle_attack). To prevent this, Oathent should be secured with HTTPS for all traffic that exits your network (This can be done with a local reverse proxy using HTTPS or by enabling HTTPS in Oathent and providing a valid key pair).**
 
 ### Database
 Create a `db.env` file and set configurable values within the file. An example configuration can be found in `db.example.env`.
