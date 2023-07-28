@@ -3,12 +3,14 @@ import { Token, UseAuth } from '../auth/auth.guard';
 import { ProfileResponse } from '../entities/auth.entity';
 import { ApiTags, ApiOperation, ApiOkResponse } from '@nestjs/swagger';
 import { scopeIncludes } from 'src/auth/scopes';
+import { RateLimit } from 'src/ratelimit.guard';
 
 @ApiTags('user')
 @Controller('user')
 export class UsersController {
     @ApiOperation({ summary: 'View user profile' })
     @ApiOkResponse({ description: 'User profile', type: ProfileResponse })
+    @RateLimit(25)
     @UseAuth(Token.ACCESS)
     @Get('profile')
     getProfile(@Request() req) {
