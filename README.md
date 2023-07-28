@@ -6,7 +6,7 @@
 
 It supports modern authentication flows and custom auth scopes.
 
-**Oathent is still in development, a roadmap can be found here: [Oathent Server Roadmap](https://github.com/orgs/Oathent/projects/1/views/1)
+**Oathent is still in development, a roadmap can be found here: [Oathent Server Roadmap](https://github.com/orgs/Oathent/projects/1/views/1)**
 
 ## Requirements
 - Node.js
