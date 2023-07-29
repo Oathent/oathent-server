@@ -71,3 +71,25 @@ export class RegisterDto {
     })
     readonly password: string;
 }
+
+export class RequestResetPasswordDto {
+    @IsNotEmpty()
+    @IsEmail({}, { message: 'Email address must be valid' })
+    @ApiProperty({
+        description: 'The email for the account',
+        example: 'me@example.com',
+    })
+    readonly email: string;
+}
+
+export class ResetPasswordDto {
+    @IsNotEmpty()
+    @IsStrongPassword(strongPassOptions, {
+        message: 'Password is not strong enough',
+    })
+    @ApiProperty({
+        description: 'The new password for the account',
+        example: 'password123',
+    })
+    readonly password: string;
+}

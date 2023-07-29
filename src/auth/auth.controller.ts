@@ -19,9 +19,12 @@ import {
     ApiBadRequestResponse,
     ApiOkResponse,
     ApiForbiddenResponse,
+    ApiExcludeEndpoint,
 } from '@nestjs/swagger';
-import { LoginDto, RegisterDto } from 'src/dto/auth.dto';
+import { LoginDto, RegisterDto, RequestResetPasswordDto, ResetPasswordDto } from 'src/dto/auth.dto';
 import { RateLimit } from 'src/ratelimit.guard';
+import { sendVerifyEmail } from 'src/email';
+import { readFile } from 'fs/promises';
 
 @ApiTags('auth')
 @Controller('auth')
@@ -82,5 +85,30 @@ export class AuthController {
     @Get('verify')
     verifyAccount(@Query('code') code: string) {
         return this.usersService.verifyAccount(code);
+    }
+
+    @ApiOperation({ summary: 'Requests a password reset link be sent to the user\'s email' })
+    @ApiOkResponse({ description: 'Success (Or account doesn\'t exist with that email. Prevents leaking data)' })
+    @HttpCode(HttpStatus.OK)
+    @RateLimit(5)
+    @Post('requestreset')
+    async requestResetPassword(@Body() requestResetPasswordDto: RequestResetPasswordDto) {
+        return this.usersService.requestResetPassword(requestResetPasswordDto.email);
+    }
+
+    @ApiExcludeEndpoint()
+    @Get('reset')
+    getResetPage() {
+        return readFile('./public/reset.html', 'utf-8');
+    }
+
+    @ApiOperation({ summary: 'Verifies an account using a verification token' })
+    @ApiOkResponse({ description: 'Success' })
+    @ApiForbiddenResponse({ description: 'Forbidden' })
+    @RateLimit(5)
+    @UseAuth(Token.PASSWORD_RESET_CODE)
+    @Post('reset')
+    resetPassword(@Request() req, @Body() resetPasswordDto: ResetPasswordDto) {
+        return this.usersService.resetAccount(req.user.id, resetPasswordDto.password);
     }
 }

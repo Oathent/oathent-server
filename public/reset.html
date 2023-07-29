@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reset password</title>
+</head>
+
+<body>
+    <form id="formElem">
+        <p>Please enter a new password:</p>
+        <input type="password">
+        <input type="submit">
+    </form>
+    <p id="response"></p>
+
+    <script>
+        formElem.onsubmit = async (e) => {
+            e.preventDefault();
+            var form = document.querySelector("#formElem");
+
+            data = {
+                password: form.querySelector('input[type="password"]').value,
+            }
+
+            let response = await fetch('/auth/reset', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${new URL(location.href).searchParams.get('code')}`,
+                },
+                body: JSON.stringify(data),
+            })
+
+            let text = await response.json(); // read response body as text
+            document.querySelector("#response").innerHTML = text.message;
+        };
+    </script>
+</body>
+
+</html>

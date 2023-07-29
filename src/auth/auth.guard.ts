@@ -33,6 +33,7 @@ export enum Token {
     CODE = 'c',
     DEVICE_CODE = 'd',
     VERIFY_CODE = 'v',
+    PASSWORD_RESET_CODE = 'p',
 }
 
 const tokenNames = {
@@ -123,6 +124,12 @@ export class AuthGuard implements CanActivate {
                     break;
                 case Token.DEVICE_CODE:
                     secret = jwtConstants.deviceCodeSecret;
+                    break;
+                case Token.VERIFY_CODE:
+                    secret = jwtConstants.verifyCodeSecret;
+                    break;
+                case Token.PASSWORD_RESET_CODE:
+                    secret = jwtConstants.resetCodeSecret;
                     break;
                 case Token.CODE:
                     request['oauthCode'] = {

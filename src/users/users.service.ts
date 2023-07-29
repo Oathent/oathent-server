@@ -5,13 +5,13 @@ import { PrismaClient, User } from '@prisma/client';
 import { createSnowflake } from 'src/common';
 import { jwtConstants } from 'src/auth/constants';
 import { Token } from 'src/auth/auth.guard';
-import { sendVerifyEmail } from 'src/email';
+import { sendResetEmail, sendVerifyEmail } from 'src/email';
 import { JwtService } from '@nestjs/jwt';
 const prisma = new PrismaClient();
 
 @Injectable()
 export class UsersService {
-    constructor(private readonly jwtService: JwtService) {}
+    constructor(private readonly jwtService: JwtService) { }
 
     async findOneId(id: bigint): Promise<User | undefined> {
         const user = await prisma.user.findUnique({ where: { id } });
@@ -83,7 +83,7 @@ export class UsersService {
             expiresIn: jwtConstants.verifyCodeExpiry,
             secret: jwtConstants.verifyCodeSecret,
         });
-        await sendVerifyEmail(user, code);
+        sendVerifyEmail(user, code);
 
         return user;
     }
@@ -121,6 +121,46 @@ export class UsersService {
             throw new ForbiddenException(
                 'Verification failed (Perhaps the code was invalid or expired)',
             );
+        }
+    }
+
+    async requestResetPassword(email: string) {
+        if (!await this.existsEmail(email))
+            return;
+
+        let user = await this.findOneEmail(email);
+
+        const resetCodePayload = {
+            typ: Token.PASSWORD_RESET_CODE,
+            sub: user.id,
+        };
+
+        const code = await this.jwtService.signAsync(resetCodePayload, {
+            expiresIn: jwtConstants.resetCodeExpiry,
+            secret: jwtConstants.resetCodeSecret,
+        });
+        console.log(code);
+        sendResetEmail(user, code);
+    }
+
+    async resetAccount(userId: bigint, password: string): Promise<any> {
+        try {
+            const passHash = await argon2.hash(password);
+
+            await prisma.user.update({
+                where: {
+                    id: userId,
+                },
+                data: {
+                    passHash,
+                    lastRevoke: new Date(),
+                },
+            });
+
+            return { statusCode: 200, message: "Password successfully reset. You have been logged out of all sessions." };
+        } catch (e) {
+            console.log(e);
+            throw new ForbiddenException('Password reset failed');
         }
     }
 }
