@@ -21,6 +21,7 @@ class ThrottlerBehindProxyGuard extends ThrottlerGuard {
 }
 
 export function RateLimitEnv(path: string, fallback: number) {
-    let envVal = process.env['RATE_LIMIT_'+path.toUpperCase().replaceAll('/', '_')];
-    return (envVal && !isNaN(Number(envVal))) ? Number(envVal) : fallback;
+    const envVal =
+        process.env['RATE_LIMIT_' + path.toUpperCase().replaceAll('/', '_')];
+    return envVal && !isNaN(Number(envVal)) ? Number(envVal) : fallback;
 }

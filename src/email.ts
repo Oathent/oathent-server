@@ -54,7 +54,10 @@ export async function sendVerifyEmail(
         let subject = `Account verification for ${user.username}`;
         if (process.env.VERIFY_EMAIL_SUBJECT)
             subject = process.env.VERIFY_EMAIL_SUBJECT.includes('{user}')
-                ? process.env.VERIFY_EMAIL_SUBJECT.replaceAll('{user}', user.username)
+                ? process.env.VERIFY_EMAIL_SUBJECT.replaceAll(
+                      '{user}',
+                      user.username,
+                  )
                 : `${user.username}: ${process.env.VERIFY_EMAIL_SUBJECT}`;
 
         let html = `<p>Please click this link to verify your account:<br><a href="${verifyUrl}">${verifyUrl}</a></p>`;
@@ -102,13 +105,19 @@ export async function sendResetEmail(
         }/auth/reset/?code=${code}`;
         if (process.env.PASS_RESET_EMAIL_URL)
             resetUrl = process.env.PASS_RESET_EMAIL_URL.includes('{code}')
-                ? process.env.PASS_RESET_EMAIL_SUBJECT.replaceAll('{code}', code)
+                ? process.env.PASS_RESET_EMAIL_SUBJECT.replaceAll(
+                      '{code}',
+                      code,
+                  )
                 : `${process.env.PASS_RESET_EMAIL_URL}?code=${code}`;
 
         let subject = `Password reset for ${user.username}`;
         if (process.env.PASS_RESET_EMAIL_SUBJECT)
             subject = process.env.PASS_RESET_EMAIL_SUBJECT.includes('{user}')
-                ? process.env.PASS_RESET_EMAIL_SUBJECT.replaceAll('{user}', user.username)
+                ? process.env.PASS_RESET_EMAIL_SUBJECT.replaceAll(
+                      '{user}',
+                      user.username,
+                  )
                 : `${user.username}: ${process.env.PASS_RESET_EMAIL_SUBJECT}`;
 
         let html = `<p>Please click this link to reset the password for your account:<br><a href="${resetUrl}">${resetUrl}</a></p>`;

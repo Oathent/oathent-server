@@ -11,7 +11,7 @@ const prisma = new PrismaClient();
 
 @Injectable()
 export class UsersService {
-    constructor(private readonly jwtService: JwtService) { }
+    constructor(private readonly jwtService: JwtService) {}
 
     async findOneId(id: bigint): Promise<User | undefined> {
         const user = await prisma.user.findUnique({ where: { id } });
@@ -125,10 +125,9 @@ export class UsersService {
     }
 
     async requestResetPassword(email: string) {
-        if (!await this.existsEmail(email))
-            return;
+        if (!(await this.existsEmail(email))) return;
 
-        let user = await this.findOneEmail(email);
+        const user = await this.findOneEmail(email);
 
         const resetCodePayload = {
             typ: Token.PASSWORD_RESET_CODE,
@@ -156,7 +155,11 @@ export class UsersService {
                 },
             });
 
-            return { statusCode: 200, message: "Password successfully reset. You have been logged out of all sessions." };
+            return {
+                statusCode: 200,
+                message:
+                    'Password successfully reset. You have been logged out of all sessions.',
+            };
         } catch (e) {
             console.log(e);
             throw new ForbiddenException('Password reset failed');

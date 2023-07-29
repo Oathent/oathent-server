@@ -58,13 +58,21 @@ export class AuthService {
     async createAccount(username: string, email: string, pass: string) {
         if (
             !username ||
-            username.length < (process.env.USERNAME_MIN_LENGTH && !isNaN(Number(process.env.USERNAME_MIN_LENGTH)) ? Number(process.env.USERNAME_MIN_LENGTH) : 4) ||
+            username.length <
+                (process.env.USERNAME_MIN_LENGTH &&
+                !isNaN(Number(process.env.USERNAME_MIN_LENGTH))
+                    ? Number(process.env.USERNAME_MIN_LENGTH)
+                    : 4) ||
             !username.match(
                 process.env.USERNAME_REGEX
                     ? new RegExp(process.env.USERNAME_REGEX, 'gi')
                     : /^[A-Z0-9 ]+$/gi,
             ) ||
-            username.length > (process.env.USERNAME_MAX_LENGTH && !isNaN(Number(process.env.USERNAME_MAX_LENGTH)) ? Number(process.env.USERNAME_MAX_LENGTH) : 32)
+            username.length >
+                (process.env.USERNAME_MAX_LENGTH &&
+                !isNaN(Number(process.env.USERNAME_MAX_LENGTH))
+                    ? Number(process.env.USERNAME_MAX_LENGTH)
+                    : 32)
         )
             throw new BadRequestException('Invalid username');
 
