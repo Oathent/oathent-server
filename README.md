@@ -51,6 +51,12 @@ If you instead intend to use HTTP, set `USE_HTTP` in `.env` to `"yes"`. **In som
 ### Database
 Create a `db.env` file and set configurable values within the file. An example configuration can be found in `db.example.env`.
 
+To manually edit the database you can run the following command which will host an editor on `http://localhost:5555`:
+```bash
+$ yarn prisma studio
+```
+Exposing this to the internet will result in the possibility for bad actors to modify values in your database. Please ensure you have not accidentally exposed port 5555 when running this command.
+
 ### Custom scopes
 Create a `custom-scopes.json` file and create new custom scopes within the file. Custom scopes can have any name, however, you may not overwrite default scopes from Oathent and all scope values must be unique powers of 2.
 
