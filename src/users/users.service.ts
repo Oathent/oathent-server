@@ -139,7 +139,6 @@ export class UsersService {
             expiresIn: jwtConstants.resetCodeExpiry,
             secret: jwtConstants.resetCodeSecret,
         });
-        console.log(code);
         sendResetEmail(user, code);
     }
 

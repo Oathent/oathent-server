@@ -123,8 +123,6 @@ export async function sendResetEmail(
                       user.username,
                   )}<br><a href="${resetUrl}">Reset</a>`;
 
-        console.log(html);
-
         const info = await transporter.sendMail({
             to: user.email,
             from: process.env.EMAIL_USER,
