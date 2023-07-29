@@ -19,3 +19,8 @@ class ThrottlerBehindProxyGuard extends ThrottlerGuard {
         return req.ips.length ? req.ips[0] : req.ip;
     }
 }
+
+export function RateLimitEnv(path: string, fallback: number) {
+    let envVal = process.env['RATE_LIMIT_'+path.toUpperCase().replaceAll('/', '_')];
+    return (envVal && !isNaN(Number(envVal))) ? Number(envVal) : fallback;
+}

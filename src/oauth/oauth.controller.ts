@@ -31,7 +31,7 @@ import {
     RevokeTokenDto,
 } from 'src/dto/oauth.dto';
 import { AuthRefreshResponse, AuthResponse } from 'src/entities/auth.entity';
-import { RateLimit } from 'src/ratelimit.guard';
+import { RateLimit, RateLimitEnv } from 'src/ratelimit.guard';
 
 @ApiTags('oauth')
 @Controller('oauth')
@@ -54,7 +54,7 @@ export class OauthController {
 
     @ApiOperation({ summary: 'Authorize an OAuth2 application' })
     @ApiOkResponse({ description: 'App authorized', type: AuthorizeResponse })
-    @RateLimit(10)
+    @RateLimit(RateLimitEnv('oauth/authorize', 10))
     @UseAuth(Token.ACCESS, { verified: true })
     @Post('/authorize')
     authorize(@Request() req, @Body() authorizeDto: AuthorizeRejectDto) {
@@ -70,7 +70,7 @@ export class OauthController {
 
     @ApiOperation({ summary: 'Reject an OAuth2 application' })
     @ApiOkResponse({ description: 'App rejected', type: RejectResponse })
-    @RateLimit(10)
+    @RateLimit(RateLimitEnv('oauth/reject', 10))
     @UseAuth(Token.ACCESS, { verified: true })
     @Post('/reject')
     reject(@Request() req, @Body() rejectDto: AuthorizeRejectDto) {
@@ -99,7 +99,7 @@ export class OauthController {
         summary: 'Generate a new OAuth2 access token using a refresh token',
     })
     @ApiOkResponse({ description: 'Success', type: AuthRefreshResponse })
-    @RateLimit(1)
+    @RateLimit(RateLimitEnv('oauth/refresh', 1))
     @UseAuth(Token.REFRESH, { verified: true })
     @Post('refresh')
     refreshToken(@Request() req) {
@@ -113,7 +113,7 @@ export class OauthController {
     @ApiOperation({
         summary: 'Generate a new device code to be used in an auth request',
     })
-    @RateLimit(5)
+    @RateLimit(RateLimitEnv('oauth/device/create', 5))
     @ApiOkResponse({ description: 'Success', type: CreateDeviceCodeResponse })
     @Post('/device/create')
     async createDeviceCode(
@@ -131,7 +131,7 @@ export class OauthController {
         description: 'Status / OAuth2 tokens',
         type: DeviceCodeRedeemResponse,
     })
-    @RateLimit(30)
+    @RateLimit(RateLimitEnv('oauth/device/redeem', 30))
     @UseAuth(Token.DEVICE_CODE)
     @Post('/device/redeem')
     async redeemDeviceCode(@Request() req) {
@@ -146,7 +146,7 @@ export class OauthController {
     @ApiOperation({ summary: 'Revoke access tokens for an app' })
     @ApiOkResponse({ description: 'Success' })
     @ApiBadRequestResponse({ description: 'Bad Request' })
-    @RateLimit(30)
+    @RateLimit(RateLimitEnv('oauth/revoke', 30))
     @UseAuth(Token.ACCESS, { verified: true })
     @Post('/revoke')
     async revoke(@Request() req, @Body() revokeTokenDto: RevokeTokenDto) {
@@ -167,7 +167,7 @@ export class OauthController {
     @ApiOperation({ summary: 'Gets the details of the current token' })
     @ApiOkResponse({ description: 'Token details', type: TokenDetailsResponse })
     @ApiBadRequestResponse({ description: 'Bad Request' })
-    @RateLimit(30)
+    @RateLimit(RateLimitEnv('oauth/token', 30))
     @UseAuth(Token.ACCESS)
     @Get('/token')
     async tokenDetails(@Request() req) {
