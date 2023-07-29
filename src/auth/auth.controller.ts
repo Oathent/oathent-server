@@ -57,7 +57,7 @@ export class AuthController {
 
     @ApiOperation({ summary: 'Refresh account access token' })
     @ApiOkResponse({ description: 'Access token', type: AuthRefreshResponse })
-    @RateLimit(10)
+    @RateLimit(5)
     @UseAuth(Token.REFRESH, { account: true })
     @Post('refresh')
     refreshToken(@Request() req) {
