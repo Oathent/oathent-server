@@ -1,5 +1,5 @@
-import { Throttle, ThrottlerGuard } from '@nestjs/throttler';
-import { Injectable, UseGuards, applyDecorators } from '@nestjs/common';
+import { Throttle, ThrottlerException, ThrottlerGuard } from '@nestjs/throttler';
+import { ExecutionContext, Injectable, UseGuards, applyDecorators } from '@nestjs/common';
 
 export const RateLimit = (limit?: number, ttl?: number) => {
     return applyDecorators(
@@ -17,6 +17,10 @@ class ThrottlerBehindProxyGuard extends ThrottlerGuard {
             else return req.user.id;
         }
         return req.ips.length ? req.ips[0] : req.ip;
+    }
+
+    protected throwThrottlingException(context: ExecutionContext) {
+        throw new ThrottlerException("Too many requests");
     }
 }
 
