@@ -48,7 +48,7 @@ export async function sendVerifyEmail(
         }/auth/verify/?code=${code}`;
         if (process.env.VERIFY_EMAIL_URL)
             verifyUrl = process.env.VERIFY_EMAIL_URL.includes('{code}')
-                ? process.env.VERIFY_EMAIL_SUBJECT.replaceAll('{code}', code)
+                ? process.env.VERIFY_EMAIL_URL.replaceAll('{code}', code)
                 : `${process.env.VERIFY_EMAIL_URL}?code=${code}`;
 
         let subject = `Account verification for ${user.username}`;
