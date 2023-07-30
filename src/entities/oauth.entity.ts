@@ -68,3 +68,11 @@ export class TokenDetailsResponse {
     })
     scopes: string[];
 }
+
+export class AuthedAppsResponse {
+    @ApiProperty({ description: 'The timestamp for the time that the app was authorised' })
+    authedAt: number;
+
+    @ApiProperty({ description: 'The details of the app' })
+    details: AppDetailsResponse;
+}

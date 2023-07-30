@@ -9,7 +9,7 @@ import { JwtService } from '@nestjs/jwt';
 import { Auth, PrismaClient } from '@prisma/client';
 import { randomBytes } from 'crypto';
 import { jwtConstants } from 'src/auth/constants';
-import { createSnowflake, limitScopeToMax } from 'src/common';
+import { createSnowflake, getSnowflakeDate, limitScopeToMax } from 'src/common';
 import { UsersService } from 'src/users/users.service';
 import {
     addDeviceCodeInfo,
@@ -350,5 +350,19 @@ export class OauthService {
             success: true,
             accessToken,
         };
+    }
+
+    async getAuthedApps(userId: bigint) {
+        if (!(await this.usersService.existsId(userId)))
+            throw new UnauthorizedException();
+
+        const authInfo = await prisma.auth.findMany({
+            where: { userId },
+        });
+
+        return Promise.all(authInfo.map(async a => ({
+            authedAt: getSnowflakeDate(a.id),
+            details: await this.getAppDetails(a.appId)
+        })));
     }
 }

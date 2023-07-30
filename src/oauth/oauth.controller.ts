@@ -19,6 +19,7 @@ import {
 } from '@nestjs/swagger';
 import {
     AppDetailsResponse,
+    AuthedAppsResponse,
     AuthorizeResponse,
     CreateDeviceCodeResponse,
     DeviceCodeRedeemResponse,
@@ -178,5 +179,14 @@ export class OauthController {
             appId: req.auth.appId,
             scopes: await this.oauthService.getScopeStrings(req.auth.scope),
         };
+    }
+
+    @ApiOperation({ summary: 'View authed apps' })
+    @ApiOkResponse({ description: 'Authed apps', type: AuthedAppsResponse })
+    @RateLimit(RateLimitEnv('oauth/apps', 25))
+    @UseAuth(Token.ACCESS, { scopes: ['user:apps'] })
+    @Get('/apps')
+    getApps(@Request() req) {
+        return this.oauthService.getAuthedApps(req.user.id);
     }
 }
