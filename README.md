@@ -48,6 +48,8 @@ If you intend to use HTTPS (recommended for public-facing use), put your SSL key
 
 If you instead intend to use HTTP, set `USE_HTTP` in `.env` to `"yes"`. **In some cases this introduces the risk of a [man-in-the-middle attack](https://wikipedia.org/wiki/Man-in-the-middle_attack). To prevent this, Oathent should be secured with HTTPS for all traffic that exits your network (This can be done with a local reverse proxy which is using HTTPS or by enabling HTTPS in Oathent and providing a valid key pair).**
 
+It is recommended to limit `CORS_ORIGINS` to your own domains to prevent 3rd-party apps from using client credentials.
+
 ### Database
 Create a `db.env` file and set configurable values within the file. An example configuration can be found in `db.example.env`.
 
