@@ -36,7 +36,7 @@ export class AuthController {
     constructor(
         private authService: AuthService,
         private usersService: UsersService,
-    ) {}
+    ) { }
 
     @ApiOperation({ summary: 'Login to an existing account' })
     @ApiOkResponse({ description: 'Account tokens', type: AuthResponse })
@@ -115,7 +115,7 @@ export class AuthController {
         return readFile('./public/reset.html', 'utf-8');
     }
 
-    @ApiOperation({ summary: 'Verifies an account using a verification token' })
+    @ApiOperation({ summary: 'Resets the password for an account using the password reset token' })
     @ApiOkResponse({ description: 'Success' })
     @ApiForbiddenResponse({ description: 'Forbidden' })
     @RateLimit(RateLimitEnv('auth/reset', 5))
