@@ -1,5 +1,5 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { IsEmail, IsNotEmpty, IsStrongPassword } from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { IsEmail, IsNotEmpty, IsOptional, IsStrongPassword } from 'class-validator';
 
 export class LoginDto {
     @ApiProperty({
@@ -89,6 +89,48 @@ export class ResetPasswordDto {
     })
     @ApiProperty({
         description: 'The new password for the account',
+        example: 'password123',
+    })
+    readonly password: string;
+}
+
+export class SocialLoginDto {
+    @IsNotEmpty()
+    @ApiProperty({
+        description: 'The provider for the social login',
+        example: 'google',
+    })
+    readonly provider: string;
+
+    @IsNotEmpty()
+    @ApiProperty({ description: 'The authentication provided by the social login' })
+    readonly auth: string;
+}
+
+export class SocialRegisterDto {
+    @IsNotEmpty()
+    @ApiProperty({
+        description: 'The provider for the social login',
+        example: 'google',
+    })
+    readonly provider: string;
+
+    @IsNotEmpty()
+    @ApiProperty({ description: 'The authentication provided by the social login' })
+    readonly auth: string;
+
+    @ApiProperty({
+        description: 'The username for the account',
+        example: 'BarnabWhy',
+    })
+    readonly username: string;
+
+    @IsOptional()
+    @IsStrongPassword(strongPassOptions, {
+        message: 'Password is not strong enough',
+    })
+    @ApiPropertyOptional({
+        description: 'The password for the account',
         example: 'password123',
     })
     readonly password: string;

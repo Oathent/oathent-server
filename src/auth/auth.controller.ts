@@ -20,12 +20,15 @@ import {
     ApiOkResponse,
     ApiForbiddenResponse,
     ApiExcludeEndpoint,
+    ApiUnprocessableEntityResponse,
 } from '@nestjs/swagger';
 import {
     LoginDto,
     RegisterDto,
     RequestResetPasswordDto,
     ResetPasswordDto,
+    SocialLoginDto,
+    SocialRegisterDto,
 } from 'src/dto/auth.dto';
 import { RateLimit, RateLimitEnv } from 'src/ratelimit.guard';
 import { readFile } from 'fs/promises';
@@ -126,5 +129,47 @@ export class AuthController {
             req.user.id,
             resetPasswordDto.password,
         );
+    }
+
+    @ApiOperation({ summary: 'Log in with a social account' })
+    @ApiOkResponse({ description: 'Account tokens', type: AuthResponse })
+    @ApiForbiddenResponse({ description: 'Forbidden' })
+    @ApiUnprocessableEntityResponse({ description: 'No account is linked to the login' })
+    @RateLimit(RateLimitEnv('auth/social/login', 5))
+    @Post('social/login')
+    socialLogin(@Body() socialLoginDto: SocialLoginDto) {
+        return this.authService.handleSocialLogin(
+            socialLoginDto.provider,
+            socialLoginDto.auth,
+        )
+    }
+
+    @ApiOperation({ summary: 'Register with a social account' })
+    @ApiOkResponse({ description: 'Account tokens', type: AuthResponse })
+    @ApiForbiddenResponse({ description: 'Forbidden' })
+    @ApiConflictResponse({ description: 'Account exists with email or username' })
+    @RateLimit(RateLimitEnv('auth/social/register', 5))
+    @Post('social/register')
+    socialRegister(@Body() socialRegisterDto: SocialRegisterDto) {
+        return this.authService.handleSocialRegister(
+            socialRegisterDto.provider,
+            socialRegisterDto.auth,
+            socialRegisterDto.username,
+            socialRegisterDto.password,
+        )
+    }
+
+    @ApiOperation({ summary: 'Link a social account' })
+    @ApiOkResponse({ description: 'Success' })
+    @ApiForbiddenResponse({ description: 'Forbidden' })
+    @RateLimit(RateLimitEnv('auth/social/link', 5))
+    @Post('social/link')
+    @UseAuth(Token.ACCESS, { account: true })
+    socialLink(@Request() req, @Body() socialLoginDto: SocialLoginDto) {
+        return this.authService.handleSocialLink(
+            req.user.id,
+            socialLoginDto.provider,
+            socialLoginDto.auth,
+        )
     }
 }

@@ -1,7 +1,7 @@
 import { Injectable, ForbiddenException } from '@nestjs/common';
 import * as argon2 from 'argon2';
 
-import { PrismaClient, User } from '@prisma/client';
+import { PrismaClient, SocialLogin, SocialProvider, User } from '@prisma/client';
 import { createSnowflake } from 'src/common';
 import { jwtConstants } from 'src/auth/constants';
 import { Token } from 'src/auth/auth.guard';
@@ -11,10 +11,11 @@ const prisma = new PrismaClient();
 
 @Injectable()
 export class UsersService {
-    constructor(private readonly jwtService: JwtService) {}
+    constructor(private readonly jwtService: JwtService) { }
 
-    async findOneId(id: bigint): Promise<User | undefined> {
-        const user = await prisma.user.findUnique({ where: { id } });
+    async findOneId(id: bigint, includeSocial?: boolean): Promise<User | undefined | any> {
+        let socialLogins = includeSocial ? { select: { provider: includeSocial, providerId: includeSocial, socialName: includeSocial } } : false;
+        const user = await prisma.user.findUnique({ where: { id }, include: { socialLogins } });
         if (!user) {
             throw new Error("Account doesn't exist");
         }
@@ -40,6 +41,15 @@ export class UsersService {
         return user;
     }
 
+    async findOneSocialLogin(provider: SocialProvider, providerId: string): Promise<User | undefined> {
+        const user = await prisma.user.findFirst({ where: { socialLogins: { some: { provider, providerId } } } });
+        if (!user) {
+            throw new Error("Account doesn't exist");
+        }
+
+        return user;
+    }
+
     async existsId(id: bigint): Promise<boolean> {
         const user = await prisma.user.findUnique({ where: { id } });
         return !!user;
@@ -52,6 +62,11 @@ export class UsersService {
 
     async existsUsername(username: string): Promise<boolean> {
         const user = await prisma.user.findUnique({ where: { username } });
+        return !!user;
+    }
+
+    async existsSocialLogin(provider: SocialProvider, providerId: string): Promise<boolean> {
+        const user = await prisma.user.findFirst({ where: { socialLogins: { some: { provider, providerId } } } });
         return !!user;
     }
 
@@ -74,16 +89,18 @@ export class UsersService {
             },
         });
 
-        const verifyCodePayload = {
-            typ: Token.VERIFY_CODE,
-            sub: user.id,
-        };
+        if (!process.env.DISABLE_VERIFICATION || process.env.DISABLE_VERIFICATION != 'yes') {
+            const verifyCodePayload = {
+                typ: Token.VERIFY_CODE,
+                sub: user.id,
+            };
 
-        const code = await this.jwtService.signAsync(verifyCodePayload, {
-            expiresIn: jwtConstants.verifyCodeExpiry,
-            secret: jwtConstants.verifyCodeSecret,
-        });
-        sendVerifyEmail(user, code);
+            const code = await this.jwtService.signAsync(verifyCodePayload, {
+                expiresIn: jwtConstants.verifyCodeExpiry,
+                secret: jwtConstants.verifyCodeSecret,
+            });
+            sendVerifyEmail(user, code);
+        }
 
         return user;
     }
@@ -164,5 +181,68 @@ export class UsersService {
             console.log(e);
             throw new ForbiddenException('Password reset failed');
         }
+    }
+
+    async createSocial(
+        email: string,
+        username: string,
+        provider: SocialProvider,
+        providerId: string,
+        socialName?: string,
+        password?: string,
+    ): Promise<User | undefined> {
+        const passHash = password ? await argon2.hash(password) : undefined;
+
+        const user = await prisma.user.create({
+            data: {
+                id: createSnowflake(),
+                email,
+                username,
+                socialLogins: {
+                    create: {
+                        provider,
+                        providerId,
+                        socialName,
+                    }
+                },
+                passHash,
+                verified:
+                    process.env.DISABLE_VERIFICATION &&
+                    process.env.DISABLE_VERIFICATION == 'yes',
+            },
+        });
+
+        if (!process.env.DISABLE_VERIFICATION || process.env.DISABLE_VERIFICATION != 'yes') {
+            const verifyCodePayload = {
+                typ: Token.VERIFY_CODE,
+                sub: user.id,
+            };
+
+            const code = await this.jwtService.signAsync(verifyCodePayload, {
+                expiresIn: jwtConstants.verifyCodeExpiry,
+                secret: jwtConstants.verifyCodeSecret,
+            });
+            sendVerifyEmail(user, code);
+        }
+
+        return user;
+    }
+
+    async linkSocial(
+        userId: bigint,
+        provider: SocialProvider,
+        providerId: string,
+        socialName?: string,
+    ): Promise<SocialLogin> {
+        const social = await prisma.socialLogin.create({
+            data: {
+                userId,
+                provider,
+                providerId,
+                socialName,
+            },
+        });
+
+        return social;
     }
 }

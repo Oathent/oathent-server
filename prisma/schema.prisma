@@ -10,18 +10,42 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum MFAMethod {
+  TOTP
+}
+
 model User {
-  id            BigInt        @id
-  email         String        @unique
-  username      String        @unique
-  passHash      String?
-  lastRevoke    DateTime?
-  apps          Application[]
-  auths         Auth[]
+  id         BigInt        @id
+  email      String        @unique
+  username   String        @unique
+  lastRevoke DateTime?
+  apps       Application[]
+  auths      Auth[]
+
+  // Account security
+  passHash     String?
+  socialLogins SocialLogin[]
+  mfaMethod    MFAMethod?
 
   // flags
   verified Boolean @default(false)
   admin    Boolean @default(false)
+}
+
+enum SocialProvider {
+  GOOGLE
+  DISCORD
+}
+
+model SocialLogin {
+  provider   SocialProvider
+  providerId String
+  socialName String?
+  User       User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId     BigInt
+
+  @@unique([provider, providerId])
+  @@id([userId, provider])
 }
 
 model Application {
@@ -38,7 +62,7 @@ model Application {
 }
 
 model Redirect {
-  id          BigInt       @id
+  id          BigInt      @id
   uri         String
   Application Application @relation(fields: [appId], references: [id], onDelete: Cascade)
   appId       BigInt      @map("applicationId")
@@ -47,11 +71,13 @@ model Redirect {
 }
 
 model Auth {
-  id          BigInt       @id
   User        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId      BigInt
   Application Application @relation(fields: [appId], references: [id], onDelete: Cascade)
   appId       BigInt      @map("applicationId")
+  authedAt    DateTime
 
   jwtSecret String
+
+  @@id([userId, appId])
 }

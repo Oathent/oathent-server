@@ -23,6 +23,10 @@ export class UsersController {
                     ? req.user.email
                     : undefined,
             verified: req.user.verified,
+            socialLogins:
+                req.auth.appId == null
+                    ? req.user.socialLogins
+                    : undefined,
         };
     }
 }

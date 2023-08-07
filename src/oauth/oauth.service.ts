@@ -26,7 +26,7 @@ export class OauthService {
         @Inject(forwardRef(() => UsersService))
         private usersService: UsersService,
         private jwtService: JwtService,
-    ) {}
+    ) { }
 
     async authorizeApp(
         userId: bigint,
@@ -191,8 +191,8 @@ export class OauthService {
     }
 
     async hasAuthInfo(userId: bigint, appId: bigint): Promise<boolean> {
-        const authInfo = await prisma.auth.findFirst({
-            where: { userId, appId },
+        const authInfo = await prisma.auth.findUnique({
+            where: { userId_appId: { userId, appId } },
         });
         return !!authInfo;
     }
@@ -206,9 +206,9 @@ export class OauthService {
 
         const authInfo = await prisma.auth.create({
             data: {
-                id: createSnowflake(),
                 userId,
                 appId,
+                authedAt: new Date(),
                 jwtSecret: randomBytes(32).toString('base64'),
             },
         });
@@ -220,8 +220,8 @@ export class OauthService {
         userId: bigint,
         appId: bigint,
     ): Promise<Auth | undefined> {
-        const authInfo = await prisma.auth.findFirst({
-            where: { userId, appId },
+        const authInfo = await prisma.auth.findUnique({
+            where: { userId_appId: { userId, appId } },
         });
         if (!authInfo) {
             throw new Error("Auth info doesn't exist");
@@ -240,8 +240,7 @@ export class OauthService {
         if (!(await this.hasAuthInfo(userId, appId)))
             throw new BadRequestException();
 
-        const authInfo = await this.getAuthInfo(userId, appId);
-        await prisma.auth.delete({ where: { id: authInfo.id } });
+        await prisma.auth.delete({ where: { userId_appId: { userId, appId } } });
     }
 
     async appExists(id: bigint): Promise<boolean> {
@@ -361,7 +360,7 @@ export class OauthService {
         });
 
         return Promise.all(authInfo.map(async a => ({
-            authedAt: getSnowflakeDate(a.id),
+            authedAt: a.authedAt.getTime(),
             details: await this.getAppDetails(a.appId)
         })));
     }
