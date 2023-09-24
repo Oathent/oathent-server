@@ -24,9 +24,9 @@ export class UsersController {
                     : undefined,
             verified: req.user.verified,
             socialLogins:
-                req.auth.appId == null
-                    ? req.user.socialLogins
-                    : undefined,
+                req.auth.appId == null ? req.user.socialLogins : undefined,
+            hasPassword:
+                req.auth.appId == null ? req.user.hasPassword : undefined,
         };
     }
 }

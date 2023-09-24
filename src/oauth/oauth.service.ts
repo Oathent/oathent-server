@@ -9,7 +9,7 @@ import { JwtService } from '@nestjs/jwt';
 import { Auth, PrismaClient } from '@prisma/client';
 import { randomBytes } from 'crypto';
 import { jwtConstants } from 'src/auth/constants';
-import { createSnowflake, getSnowflakeDate, limitScopeToMax } from 'src/common';
+import { limitScopeToMax } from 'src/common';
 import { UsersService } from 'src/users/users.service';
 import {
     addDeviceCodeInfo,
@@ -26,7 +26,7 @@ export class OauthService {
         @Inject(forwardRef(() => UsersService))
         private usersService: UsersService,
         private jwtService: JwtService,
-    ) { }
+    ) {}
 
     async authorizeApp(
         userId: bigint,
@@ -240,7 +240,9 @@ export class OauthService {
         if (!(await this.hasAuthInfo(userId, appId)))
             throw new BadRequestException();
 
-        await prisma.auth.delete({ where: { userId_appId: { userId, appId } } });
+        await prisma.auth.delete({
+            where: { userId_appId: { userId, appId } },
+        });
     }
 
     async appExists(id: bigint): Promise<boolean> {
@@ -359,9 +361,11 @@ export class OauthService {
             where: { userId },
         });
 
-        return Promise.all(authInfo.map(async a => ({
-            authedAt: a.authedAt.getTime(),
-            details: await this.getAppDetails(a.appId)
-        })));
+        return Promise.all(
+            authInfo.map(async (a) => ({
+                authedAt: a.authedAt.getTime(),
+                details: await this.getAppDetails(a.appId),
+            })),
+        );
     }
 }

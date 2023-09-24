@@ -56,7 +56,7 @@ export class OauthController {
     @ApiOperation({ summary: 'Authorize an OAuth2 application' })
     @ApiOkResponse({ description: 'App authorized', type: AuthorizeResponse })
     @RateLimit(RateLimitEnv('oauth/authorize', 10))
-    @UseAuth(Token.ACCESS, { verified: true })
+    @UseAuth(Token.ACCESS, { verified: true, account: true })
     @Post('/authorize')
     authorize(@Request() req, @Body() authorizeDto: AuthorizeRejectDto) {
         return this.oauthService.authorizeApp(
@@ -72,7 +72,7 @@ export class OauthController {
     @ApiOperation({ summary: 'Reject an OAuth2 application' })
     @ApiOkResponse({ description: 'App rejected', type: RejectResponse })
     @RateLimit(RateLimitEnv('oauth/reject', 10))
-    @UseAuth(Token.ACCESS, { verified: true })
+    @UseAuth(Token.ACCESS, { verified: true, account: true })
     @Post('/reject')
     reject(@Request() req, @Body() rejectDto: AuthorizeRejectDto) {
         return this.oauthService.rejectApp(
@@ -184,7 +184,7 @@ export class OauthController {
     @ApiOperation({ summary: 'View authed apps' })
     @ApiOkResponse({ description: 'Authed apps', type: AuthedAppsResponse })
     @RateLimit(RateLimitEnv('oauth/apps', 25))
-    @UseAuth(Token.ACCESS, { scopes: ['user:apps'] })
+    @UseAuth(Token.ACCESS, { scopes: ['user:apps'], account: true })
     @Get('/apps')
     getApps(@Request() req) {
         return this.oauthService.getAuthedApps(req.user.id);
