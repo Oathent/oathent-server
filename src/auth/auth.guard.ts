@@ -194,6 +194,7 @@ export class AuthGuard implements CanActivate {
                 email: user.email,
                 verified: user.verified,
                 socialLogins: user.socialLogins,
+                hasPassword: user.passHash != null,
             };
 
             request['auth'] = {

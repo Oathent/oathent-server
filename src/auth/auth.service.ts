@@ -233,7 +233,7 @@ export class AuthService {
         let authed = false;
         let providerId, socialName;
         let providerVal: SocialProvider;
-        switch (provider) {
+        switch (provider.toLowerCase()) {
             case "google":
                 let { success, userId, userGivenName } = await verifyGoogleToken(auth);
                 authed = success;
@@ -250,6 +250,38 @@ export class AuthService {
 
         try {
             await this.usersService.linkSocial(id, providerVal, providerId, socialName);
+            return { success: true };
+        } catch(e) {
+            return { success: false };
+        }
+    }
+    async handleSocialUnlink(id: bigint, provider: string): Promise<any> {
+        let providerVal: SocialProvider;
+        switch (provider.toLowerCase()) {
+            case "google":
+                providerVal = SocialProvider.GOOGLE;
+                break;
+            default:
+                throw new UnauthorizedException();
+        }
+
+        try {
+            await this.usersService.unlinkSocial(id, providerVal);
+
+            let user = await this.usersService.findOneId(id, true);
+            if (user.socialLogins.length == 0 && user.passHash == null) {
+                await this.usersService.deleteAccount(id);
+            }
+
+            return { success: true };
+        } catch(e) {
+            return { success: false };
+        }
+    }
+
+    async handleDeleteAccount(id: bigint): Promise<any> {
+        try {
+            await this.usersService.deleteAccount(id);
             return { success: true };
         } catch(e) {
             return { success: false };

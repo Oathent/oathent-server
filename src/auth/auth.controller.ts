@@ -29,6 +29,7 @@ import {
     ResetPasswordDto,
     SocialLoginDto,
     SocialRegisterDto,
+    SocialUnlinkDto,
 } from 'src/dto/auth.dto';
 import { RateLimit, RateLimitEnv } from 'src/ratelimit.guard';
 import { readFile } from 'fs/promises';
@@ -39,7 +40,7 @@ export class AuthController {
     constructor(
         private authService: AuthService,
         private usersService: UsersService,
-    ) { }
+    ) {}
 
     @ApiOperation({ summary: 'Login to an existing account' })
     @ApiOkResponse({ description: 'Account tokens', type: AuthResponse })
@@ -118,7 +119,10 @@ export class AuthController {
         return readFile('./public/reset.html', 'utf-8');
     }
 
-    @ApiOperation({ summary: 'Resets the password for an account using the password reset token' })
+    @ApiOperation({
+        summary:
+            'Resets the password for an account using the password reset token',
+    })
     @ApiOkResponse({ description: 'Success' })
     @ApiForbiddenResponse({ description: 'Forbidden' })
     @RateLimit(RateLimitEnv('auth/reset', 5))
@@ -134,20 +138,24 @@ export class AuthController {
     @ApiOperation({ summary: 'Log in with a social account' })
     @ApiOkResponse({ description: 'Account tokens', type: AuthResponse })
     @ApiForbiddenResponse({ description: 'Forbidden' })
-    @ApiUnprocessableEntityResponse({ description: 'No account is linked to the login' })
+    @ApiUnprocessableEntityResponse({
+        description: 'No account is linked to the login',
+    })
     @RateLimit(RateLimitEnv('auth/social/login', 5))
     @Post('social/login')
     socialLogin(@Body() socialLoginDto: SocialLoginDto) {
         return this.authService.handleSocialLogin(
             socialLoginDto.provider,
             socialLoginDto.auth,
-        )
+        );
     }
 
     @ApiOperation({ summary: 'Register with a social account' })
     @ApiOkResponse({ description: 'Account tokens', type: AuthResponse })
     @ApiForbiddenResponse({ description: 'Forbidden' })
-    @ApiConflictResponse({ description: 'Account exists with email or username' })
+    @ApiConflictResponse({
+        description: 'Account exists with email or username',
+    })
     @RateLimit(RateLimitEnv('auth/social/register', 5))
     @Post('social/register')
     socialRegister(@Body() socialRegisterDto: SocialRegisterDto) {
@@ -156,7 +164,7 @@ export class AuthController {
             socialRegisterDto.auth,
             socialRegisterDto.username,
             socialRegisterDto.password,
-        )
+        );
     }
 
     @ApiOperation({ summary: 'Link a social account' })
@@ -170,6 +178,29 @@ export class AuthController {
             req.user.id,
             socialLoginDto.provider,
             socialLoginDto.auth,
-        )
+        );
+    }
+
+    @ApiOperation({ summary: 'Unlink a social account' })
+    @ApiOkResponse({ description: 'Success' })
+    @ApiForbiddenResponse({ description: 'Forbidden' })
+    @RateLimit(RateLimitEnv('auth/social/unlink', 5))
+    @Post('social/unlink')
+    @UseAuth(Token.ACCESS, { account: true })
+    socialUnlink(@Request() req, @Body() socialUnlinkDto: SocialUnlinkDto) {
+        return this.authService.handleSocialUnlink(
+            req.user.id,
+            socialUnlinkDto.provider,
+        );
+    }
+
+    @ApiOperation({ summary: 'Delete account' })
+    @ApiOkResponse({ description: 'Success' })
+    @ApiForbiddenResponse({ description: 'Forbidden' })
+    @RateLimit(RateLimitEnv('auth/delete', 5))
+    @Post('delete')
+    @UseAuth(Token.ACCESS, { account: true })
+    accountDelete(@Request() req) {
+        return this.authService.handleDeleteAccount(req.user.id);
     }
 }

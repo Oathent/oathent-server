@@ -1,5 +1,10 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsEmail, IsNotEmpty, IsOptional, IsStrongPassword } from 'class-validator';
+import {
+    IsEmail,
+    IsNotEmpty,
+    IsOptional,
+    IsStrongPassword,
+} from 'class-validator';
 
 export class LoginDto {
     @ApiProperty({
@@ -103,7 +108,9 @@ export class SocialLoginDto {
     readonly provider: string;
 
     @IsNotEmpty()
-    @ApiProperty({ description: 'The authentication provided by the social login' })
+    @ApiProperty({
+        description: 'The authentication provided by the social login',
+    })
     readonly auth: string;
 }
 
@@ -116,7 +123,9 @@ export class SocialRegisterDto {
     readonly provider: string;
 
     @IsNotEmpty()
-    @ApiProperty({ description: 'The authentication provided by the social login' })
+    @ApiProperty({
+        description: 'The authentication provided by the social login',
+    })
     readonly auth: string;
 
     @ApiProperty({
@@ -134,4 +143,13 @@ export class SocialRegisterDto {
         example: 'password123',
     })
     readonly password: string;
+}
+
+export class SocialUnlinkDto {
+    @IsNotEmpty()
+    @ApiProperty({
+        description: 'The provider for the social login',
+        example: 'google',
+    })
+    readonly provider: string;
 }
