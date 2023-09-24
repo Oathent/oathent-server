@@ -45,7 +45,7 @@ export class AuthController {
     @ApiOperation({ summary: 'Login to an existing account' })
     @ApiOkResponse({ description: 'Account tokens', type: AuthResponse })
     @HttpCode(HttpStatus.OK)
-    @RateLimit(RateLimitEnv('auth/login', 10))
+    @RateLimit(RateLimitEnv('auth/login', 5))
     @Post('login')
     signIn(@Body() loginDto: LoginDto) {
         return this.authService.signIn(loginDto.username, loginDto.password);
@@ -56,7 +56,7 @@ export class AuthController {
     @ApiBadRequestResponse({ description: 'Bad request' })
     @ApiConflictResponse({ description: 'Conflict' })
     @HttpCode(HttpStatus.OK)
-    @RateLimit(RateLimitEnv('auth/register', 10))
+    @RateLimit(RateLimitEnv('auth/register', 5))
     @Post('register')
     createAccount(@Body() registerDto: RegisterDto) {
         return this.authService.createAccount(
