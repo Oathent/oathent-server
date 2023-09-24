@@ -3,7 +3,6 @@ import {
     UnauthorizedException,
     BadRequestException,
     ConflictException,
-    NotFoundException,
     UnprocessableEntityException,
 } from '@nestjs/common';
 import { UsersService } from '../users/users.service';
@@ -125,7 +124,7 @@ export class AuthService {
         let providerVal: SocialProvider;
         switch (provider) {
             case 'google':
-                let { success, userId } = await verifyGoogleToken(auth);
+                const { success, userId } = await verifyGoogleToken(auth);
                 authed = success;
                 providerId = userId;
                 providerVal = SocialProvider.GOOGLE;
@@ -144,7 +143,7 @@ export class AuthService {
         )
             throw new UnprocessableEntityException('Not linked to an account');
 
-        let user = await this.usersService.findOneSocialLogin(
+        const user = await this.usersService.findOneSocialLogin(
             providerVal,
             providerId,
         );
@@ -213,7 +212,7 @@ export class AuthService {
         let providerVal: SocialProvider;
         switch (provider) {
             case 'google':
-                let { success, userId, userEmail, userGivenName } =
+                const { success, userId, userEmail, userGivenName } =
                     await verifyGoogleToken(auth);
                 authed = success;
                 providerId = userId;
@@ -258,7 +257,7 @@ export class AuthService {
         let providerVal: SocialProvider;
         switch (provider.toLowerCase()) {
             case 'google':
-                let { success, userId, userGivenName } =
+                const { success, userId, userGivenName } =
                     await verifyGoogleToken(auth);
                 authed = success;
                 providerId = userId;
