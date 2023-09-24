@@ -24,7 +24,7 @@ export function initialiseEmail() {
     });
 }
 
-const protocolPorts: { [key: string]: number } = {
+export const protocolPorts: { [key: string]: number } = {
     http: 80,
     https: 443,
 };

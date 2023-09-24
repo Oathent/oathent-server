@@ -7,6 +7,8 @@ import {
     HttpStatus,
     Get,
     Query,
+    Param,
+    Res,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { Token, UseAuth } from './auth.guard';
@@ -33,6 +35,8 @@ import {
 } from 'src/dto/auth.dto';
 import { RateLimit, RateLimitEnv } from 'src/ratelimit.guard';
 import { readFile } from 'fs/promises';
+import { protocolPorts } from 'src/email';
+import { redeemDiscordOAuthCode } from 'src/social';
 
 @ApiTags('auth')
 @Controller('auth')
@@ -191,6 +195,71 @@ export class AuthController {
         return this.authService.handleSocialUnlink(
             req.user.id,
             socialUnlinkDto.provider,
+        );
+    }
+
+    @ApiOperation({ summary: 'Log in with a social account' })
+    @ApiOkResponse({ description: 'Account tokens', type: AuthResponse })
+    @ApiForbiddenResponse({ description: 'Forbidden' })
+    @RateLimit(RateLimitEnv('auth/social/oauth', 5))
+    @Get('social/oauth/:provider')
+    socialOauth(
+        @Param('provider') provider: string,
+        @Query('intent') intent,
+        @Res() res,
+    ) {
+        const protocol =
+            process.env.USE_HTTP.toLowerCase() == 'yes' ? 'http' : 'https';
+        const redirect = `${protocol}://${
+            process.env.SERVER_ADDRESS || 'localhost'
+        }${
+            process.env.SERVER_PORT &&
+            Number(process.env.SERVER_PORT) != protocolPorts[protocol]
+                ? ':' + process.env.SERVER_PORT
+                : ''
+        }/auth/social/oauth/${provider}/callback`;
+
+        switch (provider) {
+            case 'discord':
+                res.redirect(
+                    `https://discord.com/api/oauth2/authorize?client_id=${
+                        process.env.SOCIAL_DISCORD_CLIENT_ID
+                    }&redirect_uri=${redirect}&response_type=code&scope=identify%20email${
+                        intent ? `&state=${intent}` : ''
+                    }`,
+                );
+                break;
+            default:
+                res.redirect(process.env.SOCIAL_OAUTH_REDIRECT);
+                break;
+        }
+    }
+
+    @ApiOperation({ summary: 'Log in with a social account' })
+    @ApiOkResponse({ description: 'Account tokens', type: AuthResponse })
+    @ApiForbiddenResponse({ description: 'Forbidden' })
+    @RateLimit(RateLimitEnv('auth/social/oauth/callback', 5))
+    @Get('social/oauth/:provider/callback')
+    async socialOauthCallback(
+        @Param('provider') provider: string,
+        @Query('code') code: string,
+        @Query('state') state: string,
+        @Res() res,
+    ) {
+        let credential = code;
+
+        switch (provider) {
+            case 'discord':
+                credential = await redeemDiscordOAuthCode(code);
+                break;
+        }
+
+        res.redirect(
+            `${
+                process.env.SOCIAL_OAUTH_REDIRECT
+            }?provider=${provider}&credential=${credential}${
+                state ? `&intent=${state}` : ''
+            }`,
         );
     }
 

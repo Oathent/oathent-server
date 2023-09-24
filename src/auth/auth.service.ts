@@ -9,7 +9,7 @@ import { UsersService } from '../users/users.service';
 import * as argon2 from 'argon2';
 import { JwtService } from '@nestjs/jwt';
 import { jwtConstants } from './constants';
-import { verifyGoogleToken } from 'src/social';
+import { verifyDiscordOAuth, verifyGoogleToken } from 'src/social';
 import { SocialProvider } from '@prisma/client';
 
 @Injectable()
@@ -123,12 +123,20 @@ export class AuthService {
         let providerId;
         let providerVal: SocialProvider;
         switch (provider) {
-            case 'google':
+            case 'google': {
                 const { success, userId } = await verifyGoogleToken(auth);
                 authed = success;
                 providerId = userId;
                 providerVal = SocialProvider.GOOGLE;
                 break;
+            }
+            case 'discord': {
+                const { success, userId } = await verifyDiscordOAuth(auth);
+                authed = success;
+                providerId = userId;
+                providerVal = SocialProvider.DISCORD;
+                break;
+            }
             default:
                 throw new UnauthorizedException();
         }
@@ -211,7 +219,7 @@ export class AuthService {
         let providerId: string, email: string, socialName: string | undefined;
         let providerVal: SocialProvider;
         switch (provider) {
-            case 'google':
+            case 'google': {
                 const { success, userId, userEmail, userGivenName } =
                     await verifyGoogleToken(auth);
                 authed = success;
@@ -220,6 +228,17 @@ export class AuthService {
                 socialName = userGivenName;
                 providerVal = SocialProvider.GOOGLE;
                 break;
+            }
+            case 'discord': {
+                const { success, userId, username, userEmail } =
+                    await verifyDiscordOAuth(auth);
+                authed = success;
+                providerId = userId;
+                email = userEmail;
+                socialName = username;
+                providerVal = SocialProvider.DISCORD;
+                break;
+            }
             default:
                 throw new UnauthorizedException();
         }
@@ -256,7 +275,7 @@ export class AuthService {
         let providerId, socialName;
         let providerVal: SocialProvider;
         switch (provider.toLowerCase()) {
-            case 'google':
+            case 'google': {
                 const { success, userId, userGivenName } =
                     await verifyGoogleToken(auth);
                 authed = success;
@@ -264,6 +283,17 @@ export class AuthService {
                 socialName = userGivenName;
                 providerVal = SocialProvider.GOOGLE;
                 break;
+            }
+            case 'discord': {
+                const { success, userId, username } = await verifyDiscordOAuth(
+                    auth,
+                );
+                authed = success;
+                providerId = userId;
+                socialName = username;
+                providerVal = SocialProvider.DISCORD;
+                break;
+            }
             default:
                 throw new UnauthorizedException();
         }
@@ -288,6 +318,9 @@ export class AuthService {
             case 'google':
                 providerVal = SocialProvider.GOOGLE;
                 break;
+            case 'discord':
+                providerVal = SocialProvider.DISCORD;
+                break;
             default:
                 throw new UnauthorizedException();
         }
@@ -295,7 +328,7 @@ export class AuthService {
         try {
             await this.usersService.unlinkSocial(id, providerVal);
 
-            let user = await this.usersService.findOneId(id, true);
+            const user = await this.usersService.findOneId(id, true);
             if (user.socialLogins.length == 0 && user.passHash == null) {
                 await this.usersService.deleteAccount(id);
             }

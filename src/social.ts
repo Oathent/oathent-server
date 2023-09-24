@@ -1,4 +1,5 @@
 import { OAuth2Client } from 'google-auth-library';
+import { protocolPorts } from './email';
 
 const client = new OAuth2Client();
 export async function verifyGoogleToken(token: string) {
@@ -15,6 +16,64 @@ export async function verifyGoogleToken(token: string) {
         const userGivenName = payload['given_name'];
         const userEmail = payload['email'];
         return { success: true, userId, userName, userGivenName, userEmail };
+    } catch (e) {
+        return { success: false };
+    }
+}
+
+export async function redeemDiscordOAuthCode(code: string) {
+    const protocol =
+        process.env.USE_HTTP.toLowerCase() == 'yes' ? 'http' : 'https';
+
+    const redirect = `${protocol}://${
+        process.env.SERVER_ADDRESS || 'localhost'
+    }${
+        process.env.SERVER_PORT &&
+        Number(process.env.SERVER_PORT) != protocolPorts[protocol]
+            ? ':' + process.env.SERVER_PORT
+            : ''
+    }/auth/social/oauth/discord/callback`;
+
+    const body = new URLSearchParams();
+    body.append('code', code);
+    body.append('client_id', process.env.SOCIAL_DISCORD_CLIENT_ID);
+    body.append('client_secret', process.env.SOCIAL_DISCORD_CLIENT_SECRET);
+    body.append('grant_type', 'authorization_code');
+    body.append('redirect_uri', redirect);
+
+    const tokenRes = await fetch('https://discord.com/api/oauth2/token', {
+        method: 'POST',
+        body,
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+        },
+    });
+
+    const data = await tokenRes.json();
+    const { access_token } = data;
+
+    return access_token;
+}
+
+export async function verifyDiscordOAuth(token: string) {
+    try {
+        if (process.env.SOCIAL_DISCORD_ENABLE == 'no')
+            return { success: false };
+
+        const res = await fetch('https://discord.com/api/users/@me', {
+            headers: {
+                authorization: `Bearer ${token}`,
+            },
+        });
+
+        const user = await res.json();
+
+        return {
+            success: true,
+            userId: user.id,
+            username: user.username,
+            userEmail: user.email,
+        };
     } catch (e) {
         return { success: false };
     }
