@@ -18,7 +18,7 @@ export class AuthService {
     constructor(
         private usersService: UsersService,
         private jwtService: JwtService,
-    ) { }
+    ) {}
 
     async signIn(username: string, pass: string): Promise<any> {
         if (!username || !(await this.usersService.existsUsername(username)))
@@ -63,20 +63,20 @@ export class AuthService {
         if (
             !username ||
             username.length <
-            (process.env.USERNAME_MIN_LENGTH &&
+                (process.env.USERNAME_MIN_LENGTH &&
                 !isNaN(Number(process.env.USERNAME_MIN_LENGTH))
-                ? Number(process.env.USERNAME_MIN_LENGTH)
-                : 4) ||
+                    ? Number(process.env.USERNAME_MIN_LENGTH)
+                    : 4) ||
             !username.match(
                 process.env.USERNAME_REGEX
                     ? new RegExp(process.env.USERNAME_REGEX, 'gi')
                     : /^[A-Z0-9 ]+$/gi,
             ) ||
             username.length >
-            (process.env.USERNAME_MAX_LENGTH &&
+                (process.env.USERNAME_MAX_LENGTH &&
                 !isNaN(Number(process.env.USERNAME_MAX_LENGTH))
-                ? Number(process.env.USERNAME_MAX_LENGTH)
-                : 32)
+                    ? Number(process.env.USERNAME_MAX_LENGTH)
+                    : 32)
         )
             throw new BadRequestException('Invalid username');
 
@@ -124,7 +124,7 @@ export class AuthService {
         let providerId;
         let providerVal: SocialProvider;
         switch (provider) {
-            case "google":
+            case 'google':
                 let { success, userId } = await verifyGoogleToken(auth);
                 authed = success;
                 providerId = userId;
@@ -134,13 +134,20 @@ export class AuthService {
                 throw new UnauthorizedException();
         }
 
-        if (!authed || !providerId)
-            throw new UnauthorizedException();
+        if (!authed || !providerId) throw new UnauthorizedException();
 
-        if (!await this.usersService.existsSocialLogin(providerVal, providerId))
-            throw new UnprocessableEntityException("Not linked to an account");
+        if (
+            !(await this.usersService.existsSocialLogin(
+                providerVal,
+                providerId,
+            ))
+        )
+            throw new UnprocessableEntityException('Not linked to an account');
 
-        let user = await this.usersService.findOneSocialLogin(providerVal, providerId);
+        let user = await this.usersService.findOneSocialLogin(
+            providerVal,
+            providerId,
+        );
 
         const accessPayload = {
             typ: 'a',
@@ -172,24 +179,29 @@ export class AuthService {
         };
     }
 
-    async handleSocialRegister(provider: string, auth: string, username: string, pass: string): Promise<any> {
+    async handleSocialRegister(
+        provider: string,
+        auth: string,
+        username: string,
+        pass: string,
+    ): Promise<any> {
         if (
             !username ||
             username.length <
-            (process.env.USERNAME_MIN_LENGTH &&
+                (process.env.USERNAME_MIN_LENGTH &&
                 !isNaN(Number(process.env.USERNAME_MIN_LENGTH))
-                ? Number(process.env.USERNAME_MIN_LENGTH)
-                : 4) ||
+                    ? Number(process.env.USERNAME_MIN_LENGTH)
+                    : 4) ||
             !username.match(
                 process.env.USERNAME_REGEX
                     ? new RegExp(process.env.USERNAME_REGEX, 'gi')
                     : /^[A-Z0-9 ]+$/gi,
             ) ||
             username.length >
-            (process.env.USERNAME_MAX_LENGTH &&
+                (process.env.USERNAME_MAX_LENGTH &&
                 !isNaN(Number(process.env.USERNAME_MAX_LENGTH))
-                ? Number(process.env.USERNAME_MAX_LENGTH)
-                : 32)
+                    ? Number(process.env.USERNAME_MAX_LENGTH)
+                    : 32)
         )
             throw new BadRequestException('Invalid username');
 
@@ -200,8 +212,9 @@ export class AuthService {
         let providerId: string, email: string, socialName: string | undefined;
         let providerVal: SocialProvider;
         switch (provider) {
-            case "google":
-                let { success, userId, userEmail, userGivenName } = await verifyGoogleToken(auth);
+            case 'google':
+                let { success, userId, userEmail, userGivenName } =
+                    await verifyGoogleToken(auth);
                 authed = success;
                 providerId = userId;
                 email = userEmail;
@@ -212,8 +225,7 @@ export class AuthService {
                 throw new UnauthorizedException();
         }
 
-        if (!authed || !providerId)
-            throw new UnauthorizedException();
+        if (!authed || !providerId) throw new UnauthorizedException();
 
         if (!email.match(/^.+@.+\.[^@]+$/))
             throw new BadRequestException('Invalid email');
@@ -226,16 +238,28 @@ export class AuthService {
                 'User already exists with that username or email',
             );
 
-        await this.usersService.createSocial(email, username, providerVal, providerId, socialName, pass);
+        await this.usersService.createSocial(
+            email,
+            username,
+            providerVal,
+            providerId,
+            socialName,
+            pass,
+        );
         return this.handleSocialLogin(provider, auth);
     }
-    async handleSocialLink(id: bigint, provider: string, auth: string): Promise<any> {
+    async handleSocialLink(
+        id: bigint,
+        provider: string,
+        auth: string,
+    ): Promise<any> {
         let authed = false;
         let providerId, socialName;
         let providerVal: SocialProvider;
         switch (provider.toLowerCase()) {
-            case "google":
-                let { success, userId, userGivenName } = await verifyGoogleToken(auth);
+            case 'google':
+                let { success, userId, userGivenName } =
+                    await verifyGoogleToken(auth);
                 authed = success;
                 providerId = userId;
                 socialName = userGivenName;
@@ -245,20 +269,24 @@ export class AuthService {
                 throw new UnauthorizedException();
         }
 
-        if (!authed || !providerId)
-            throw new UnauthorizedException();
+        if (!authed || !providerId) throw new UnauthorizedException();
 
         try {
-            await this.usersService.linkSocial(id, providerVal, providerId, socialName);
+            await this.usersService.linkSocial(
+                id,
+                providerVal,
+                providerId,
+                socialName,
+            );
             return { success: true };
-        } catch(e) {
+        } catch (e) {
             return { success: false };
         }
     }
     async handleSocialUnlink(id: bigint, provider: string): Promise<any> {
         let providerVal: SocialProvider;
         switch (provider.toLowerCase()) {
-            case "google":
+            case 'google':
                 providerVal = SocialProvider.GOOGLE;
                 break;
             default:
@@ -274,7 +302,7 @@ export class AuthService {
             }
 
             return { success: true };
-        } catch(e) {
+        } catch (e) {
             return { success: false };
         }
     }
@@ -283,7 +311,7 @@ export class AuthService {
         try {
             await this.usersService.deleteAccount(id);
             return { success: true };
-        } catch(e) {
+        } catch (e) {
             return { success: false };
         }
     }
