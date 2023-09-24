@@ -174,7 +174,7 @@ export class AuthController {
     @ApiOperation({ summary: 'Link a social account' })
     @ApiOkResponse({ description: 'Success' })
     @ApiForbiddenResponse({ description: 'Forbidden' })
-    @RateLimit(RateLimitEnv('auth/social/link', 5))
+    @RateLimit(RateLimitEnv('auth/social/link', 10))
     @Post('social/link')
     @UseAuth(Token.ACCESS, { account: true })
     socialLink(@Request() req, @Body() socialLoginDto: SocialLoginDto) {
@@ -188,7 +188,7 @@ export class AuthController {
     @ApiOperation({ summary: 'Unlink a social account' })
     @ApiOkResponse({ description: 'Success' })
     @ApiForbiddenResponse({ description: 'Forbidden' })
-    @RateLimit(RateLimitEnv('auth/social/unlink', 5))
+    @RateLimit(RateLimitEnv('auth/social/unlink', 10))
     @Post('social/unlink')
     @UseAuth(Token.ACCESS, { account: true })
     socialUnlink(@Request() req, @Body() socialUnlinkDto: SocialUnlinkDto) {
@@ -201,7 +201,6 @@ export class AuthController {
     @ApiOperation({ summary: 'Log in with a social account' })
     @ApiOkResponse({ description: 'Account tokens', type: AuthResponse })
     @ApiForbiddenResponse({ description: 'Forbidden' })
-    @RateLimit(RateLimitEnv('auth/social/oauth', 5))
     @Get('social/oauth/:provider')
     socialOauth(
         @Param('provider') provider: string,
@@ -238,7 +237,7 @@ export class AuthController {
     @ApiOperation({ summary: 'Log in with a social account' })
     @ApiOkResponse({ description: 'Account tokens', type: AuthResponse })
     @ApiForbiddenResponse({ description: 'Forbidden' })
-    @RateLimit(RateLimitEnv('auth/social/oauth/callback', 5))
+    @RateLimit(RateLimitEnv('auth/social/oauth/callback', 10))
     @Get('social/oauth/:provider/callback')
     async socialOauthCallback(
         @Param('provider') provider: string,
