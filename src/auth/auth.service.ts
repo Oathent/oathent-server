@@ -9,7 +9,11 @@ import { UsersService } from '../users/users.service';
 import * as argon2 from 'argon2';
 import { JwtService } from '@nestjs/jwt';
 import { jwtConstants } from './constants';
-import { verifyDiscordOAuth, verifyGitHubOAuth, verifyGoogleToken } from 'src/social';
+import {
+    verifyDiscordOAuth,
+    verifyGitHubOAuth,
+    verifyGoogleToken,
+} from 'src/social';
 import { SocialProvider } from '@prisma/client';
 import { strongPassOptions } from 'src/dto/auth.dto';
 
@@ -18,7 +22,7 @@ export class AuthService {
     constructor(
         private usersService: UsersService,
         private jwtService: JwtService,
-    ) { }
+    ) {}
 
     async signIn(username: string, pass: string): Promise<any> {
         if (!username || !(await this.usersService.existsUsername(username)))
@@ -63,20 +67,20 @@ export class AuthService {
         if (
             !username ||
             username.length <
-            (process.env.USERNAME_MIN_LENGTH &&
+                (process.env.USERNAME_MIN_LENGTH &&
                 !isNaN(Number(process.env.USERNAME_MIN_LENGTH))
-                ? Number(process.env.USERNAME_MIN_LENGTH)
-                : 4) ||
+                    ? Number(process.env.USERNAME_MIN_LENGTH)
+                    : 4) ||
             !username.match(
                 process.env.USERNAME_REGEX
                     ? new RegExp(process.env.USERNAME_REGEX, 'gi')
                     : /^[A-Z0-9 ]+$/gi,
             ) ||
             username.length >
-            (process.env.USERNAME_MAX_LENGTH &&
+                (process.env.USERNAME_MAX_LENGTH &&
                 !isNaN(Number(process.env.USERNAME_MAX_LENGTH))
-                ? Number(process.env.USERNAME_MAX_LENGTH)
-                : 32)
+                    ? Number(process.env.USERNAME_MAX_LENGTH)
+                    : 32)
         )
             throw new BadRequestException('Invalid username');
 
@@ -203,20 +207,20 @@ export class AuthService {
         if (
             !username ||
             username.length <
-            (process.env.USERNAME_MIN_LENGTH &&
+                (process.env.USERNAME_MIN_LENGTH &&
                 !isNaN(Number(process.env.USERNAME_MIN_LENGTH))
-                ? Number(process.env.USERNAME_MIN_LENGTH)
-                : 4) ||
+                    ? Number(process.env.USERNAME_MIN_LENGTH)
+                    : 4) ||
             !username.match(
                 process.env.USERNAME_REGEX
                     ? new RegExp(process.env.USERNAME_REGEX, 'gi')
                     : /^[A-Z0-9 ]+$/gi,
             ) ||
             username.length >
-            (process.env.USERNAME_MAX_LENGTH &&
+                (process.env.USERNAME_MAX_LENGTH &&
                 !isNaN(Number(process.env.USERNAME_MAX_LENGTH))
-                ? Number(process.env.USERNAME_MAX_LENGTH)
-                : 32)
+                    ? Number(process.env.USERNAME_MAX_LENGTH)
+                    : 32)
         )
             throw new BadRequestException('Invalid username');
 
@@ -258,7 +262,7 @@ export class AuthService {
                 break;
             }
             default:
-                throw new UnauthorizedException("Provider not supported");
+                throw new UnauthorizedException('Provider not supported');
         }
 
         if (!authed || !providerId) throw new UnauthorizedException();
@@ -313,7 +317,9 @@ export class AuthService {
                 break;
             }
             case 'github': {
-                const { success, userId, username } = await verifyGitHubOAuth(auth);
+                const { success, userId, username } = await verifyGitHubOAuth(
+                    auth,
+                );
                 authed = success;
                 providerId = userId;
                 socialName = username;

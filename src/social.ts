@@ -85,14 +85,17 @@ export async function redeemGitHubOAuthCode(code: string) {
     body.append('client_id', process.env.SOCIAL_GITHUB_CLIENT_ID);
     body.append('client_secret', process.env.SOCIAL_GITHUB_CLIENT_SECRET);
 
-    const tokenRes = await fetch('https://github.com/login/oauth/access_token', {
-        method: 'POST',
-        body,
-        headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-            'Accept': 'application/json',
+    const tokenRes = await fetch(
+        'https://github.com/login/oauth/access_token',
+        {
+            method: 'POST',
+            body,
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                Accept: 'application/json',
+            },
         },
-    });
+    );
 
     const data = await tokenRes.json();
     const { access_token } = data;
@@ -108,7 +111,7 @@ export async function verifyGitHubOAuth(token: string) {
         const res = await fetch('https://api.github.com/user', {
             headers: {
                 authorization: `Bearer ${token}`,
-                'Accept': 'application/json',
+                Accept: 'application/json',
             },
         });
 
@@ -117,20 +120,21 @@ export async function verifyGitHubOAuth(token: string) {
         const emailsRes = await fetch('https://api.github.com/user/emails', {
             headers: {
                 authorization: `Bearer ${token}`,
-                'Accept': 'application/json',
+                Accept: 'application/json',
             },
         });
 
         const emails = await emailsRes.json();
 
-        if (emails.length == 0) // sanity check
+        if (emails.length == 0)
+            // sanity check
             return { success: false };
 
         return {
             success: true,
             userId: user.id.toString(),
             username: user.login,
-            userEmail: emails.find(e => e.primary).email,
+            userEmail: emails.find((e) => e.primary).email,
         };
     } catch (e) {
         return { success: false };

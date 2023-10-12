@@ -46,7 +46,7 @@ export class AuthController {
     constructor(
         private authService: AuthService,
         private usersService: UsersService,
-    ) { }
+    ) {}
 
     @ApiOperation({ summary: 'Login to an existing account' })
     @ApiOkResponse({ description: 'Account tokens', type: AuthResponse })
@@ -211,25 +211,31 @@ export class AuthController {
     ) {
         const protocol =
             process.env.USE_HTTP.toLowerCase() == 'yes' ? 'http' : 'https';
-        const redirect = `${protocol}://${process.env.SERVER_ADDRESS || 'localhost'
-            }${process.env.SERVER_PORT &&
-                Number(process.env.SERVER_PORT) != protocolPorts[protocol]
+        const redirect = `${protocol}://${
+            process.env.SERVER_ADDRESS || 'localhost'
+        }${
+            process.env.SERVER_PORT &&
+            Number(process.env.SERVER_PORT) != protocolPorts[protocol]
                 ? ':' + process.env.SERVER_PORT
                 : ''
-            }/auth/social/oauth/${provider}/callback`;
+        }/auth/social/oauth/${provider}/callback`;
 
         switch (provider) {
             case 'discord':
                 res.redirect(
-                    `https://discord.com/api/oauth2/authorize?client_id=${process.env.SOCIAL_DISCORD_CLIENT_ID
-                    }&redirect_uri=${redirect}&response_type=code&scope=identify%20email${intent ? `&state=${intent}` : ''
+                    `https://discord.com/api/oauth2/authorize?client_id=${
+                        process.env.SOCIAL_DISCORD_CLIENT_ID
+                    }&redirect_uri=${redirect}&response_type=code&scope=identify%20email${
+                        intent ? `&state=${intent}` : ''
                     }`,
                 );
                 break;
             case 'github':
                 res.redirect(
-                    `https://github.com/login/oauth/authorize?client_id=${process.env.SOCIAL_GITHUB_CLIENT_ID
-                    }&redirect_uri=${redirect}&response_type=code&scope=identify%20email${intent ? `&state=${intent}` : ''
+                    `https://github.com/login/oauth/authorize?client_id=${
+                        process.env.SOCIAL_GITHUB_CLIENT_ID
+                    }&redirect_uri=${redirect}&response_type=code&scope=identify%20email${
+                        intent ? `&state=${intent}` : ''
                     }`,
                 );
                 break;
@@ -252,18 +258,20 @@ export class AuthController {
 
         switch (provider) {
             case 'discord':
-                if (process.env.SOCIAL_DISCORD_ENABLE == "yes")
+                if (process.env.SOCIAL_DISCORD_ENABLE == 'yes')
                     credential = await redeemDiscordOAuthCode(code);
                 break;
             case 'github':
-                if (process.env.SOCIAL_GITHUB_ENABLE == "yes")
+                if (process.env.SOCIAL_GITHUB_ENABLE == 'yes')
                     credential = await redeemGitHubOAuthCode(code);
                 break;
         }
 
         res.redirect(
-            `${process.env.SOCIAL_OAUTH_REDIRECT
-            }?provider=${provider}&credential=${credential}${state ? `&intent=${state}` : ''
+            `${
+                process.env.SOCIAL_OAUTH_REDIRECT
+            }?provider=${provider}&credential=${credential}${
+                state ? `&intent=${state}` : ''
             }`,
         );
     }
@@ -284,7 +292,14 @@ export class AuthController {
     @RateLimit(RateLimitEnv('auth/password', 5))
     @Post('changepassword')
     @UseAuth(Token.ACCESS, { account: true })
-    changePassword(@Request() req, @Body() changePasswordDto: ChangePasswordDto) {
-        return this.usersService.changePassword(req.user.id, changePasswordDto.password, changePasswordDto.oldPassword);
+    changePassword(
+        @Request() req,
+        @Body() changePasswordDto: ChangePasswordDto,
+    ) {
+        return this.usersService.changePassword(
+            req.user.id,
+            changePasswordDto.password,
+            changePasswordDto.oldPassword,
+        );
     }
 }
