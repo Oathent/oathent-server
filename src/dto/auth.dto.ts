@@ -22,7 +22,7 @@ export class LoginDto {
     readonly password: string;
 }
 
-const strongPassOptions = {
+export const strongPassOptions = {
     minLength:
         process.env.PASSWORD_MIN_LENGTH &&
         !isNaN(Number(process.env.PASSWORD_MIN_LENGTH))
@@ -152,4 +152,22 @@ export class SocialUnlinkDto {
         example: 'google',
     })
     readonly provider: string;
+}
+
+export class ChangePasswordDto {
+    @ApiProperty({
+        description: 'The old password for the account',
+        example: 'password123',
+    })
+    readonly oldPassword: string;
+
+    @IsNotEmpty()
+    @IsStrongPassword(strongPassOptions, {
+        message: 'Password is not strong enough',
+    })
+    @ApiProperty({
+        description: 'The new password for the account',
+        example: 'password1234',
+    })
+    readonly password: string;
 }

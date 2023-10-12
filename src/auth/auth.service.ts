@@ -11,6 +11,7 @@ import { JwtService } from '@nestjs/jwt';
 import { jwtConstants } from './constants';
 import { verifyDiscordOAuth, verifyGoogleToken } from 'src/social';
 import { SocialProvider } from '@prisma/client';
+import { strongPassOptions } from 'src/dto/auth.dto';
 
 @Injectable()
 export class AuthService {
@@ -82,7 +83,7 @@ export class AuthService {
         if (!email.match(/^.+@.+\.[^@]+$/))
             throw new BadRequestException('Invalid email');
 
-        if (!pass || pass.length < 8)
+        if (!pass || pass.length < strongPassOptions.minLength)
             throw new BadRequestException('Invalid password');
 
         if (
@@ -212,7 +213,7 @@ export class AuthService {
         )
             throw new BadRequestException('Invalid username');
 
-        if (pass && pass.length < 8)
+        if (pass && pass.length < strongPassOptions.minLength)
             throw new BadRequestException('Invalid password');
 
         let authed = false;

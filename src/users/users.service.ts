@@ -1,4 +1,4 @@
-import { Injectable, ForbiddenException } from '@nestjs/common';
+import { Injectable, ForbiddenException, UnauthorizedException } from '@nestjs/common';
 import * as argon2 from 'argon2';
 
 import {
@@ -304,5 +304,38 @@ export class UsersService {
                 },
             },
         });
+    }
+
+    async changePassword(userId: bigint, newPassword: string, oldPassword?: string): Promise<any> {
+        const user = await this.findOneId(userId);
+        if (!user || user?.passHash && !(await argon2.verify(user?.passHash, oldPassword)))
+            throw new UnauthorizedException();
+
+        if (newPassword == oldPassword)
+            throw new UnauthorizedException("New password and old password cannot match");
+
+        try {
+            const passHash = await argon2.hash(newPassword);
+
+            await prisma.user.update({
+                where: {
+                    id: userId,
+                },
+                data: {
+                    passHash,
+                    lastRevoke: new Date(),
+                },
+            });
+
+            return {
+                statusCode: 200,
+                success: true,
+                message:
+                    'Password successfully changed. You have been logged out of all sessions',
+            };
+        } catch (e) {
+            console.log(e)
+            throw new ForbiddenException('Password change failed');
+        }
     }
 }
