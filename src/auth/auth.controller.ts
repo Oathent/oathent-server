@@ -198,9 +198,9 @@ export class AuthController {
         );
     }
 
-    @ApiOperation({ summary: 'Log in with a social account' })
-    @ApiOkResponse({ description: 'Account tokens', type: AuthResponse })
-    @ApiForbiddenResponse({ description: 'Forbidden' })
+    @ApiOperation({
+        summary: 'Redirect to the relevant OAuth page for a provider.',
+    })
     @Get('social/oauth/:provider')
     socialOauth(
         @Param('provider') provider: string,
@@ -234,9 +234,7 @@ export class AuthController {
         }
     }
 
-    @ApiOperation({ summary: 'Log in with a social account' })
-    @ApiOkResponse({ description: 'Account tokens', type: AuthResponse })
-    @ApiForbiddenResponse({ description: 'Forbidden' })
+    @ApiOperation({ summary: 'Callback URL for login provider OAuth' })
     @RateLimit(RateLimitEnv('auth/social/oauth/callback', 10))
     @Get('social/oauth/:provider/callback')
     async socialOauthCallback(
