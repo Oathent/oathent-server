@@ -270,7 +270,7 @@ export class AuthController {
     @ApiOkResponse({ description: 'Success' })
     @ApiForbiddenResponse({ description: 'Forbidden' })
     @RateLimit(RateLimitEnv('auth/password', 5))
-    @Patch('password')
+    @Post('changepassword')
     @UseAuth(Token.ACCESS, { account: true })
     changePassword(@Request() req, @Body() changePasswordDto: ChangePasswordDto) {
         return this.usersService.changePassword(req.user.id, changePasswordDto.password, changePasswordDto.oldPassword);
