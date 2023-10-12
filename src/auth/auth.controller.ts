@@ -38,7 +38,7 @@ import {
 import { RateLimit, RateLimitEnv } from 'src/ratelimit.guard';
 import { readFile } from 'fs/promises';
 import { protocolPorts } from 'src/email';
-import { redeemDiscordOAuthCode } from 'src/social';
+import { redeemDiscordOAuthCode, redeemGitHubOAuthCode } from 'src/social';
 
 @ApiTags('auth')
 @Controller('auth')
@@ -226,6 +226,13 @@ export class AuthController {
                     }`,
                 );
                 break;
+            case 'github':
+                res.redirect(
+                    `https://github.com/login/oauth/authorize?client_id=${process.env.SOCIAL_GITHUB_CLIENT_ID
+                    }&redirect_uri=${redirect}&response_type=code&scope=identify%20email${intent ? `&state=${intent}` : ''
+                    }`,
+                );
+                break;
             default:
                 res.redirect(process.env.SOCIAL_OAUTH_REDIRECT);
                 break;
@@ -245,7 +252,12 @@ export class AuthController {
 
         switch (provider) {
             case 'discord':
-                credential = await redeemDiscordOAuthCode(code);
+                if (process.env.SOCIAL_DISCORD_ENABLE == "yes")
+                    credential = await redeemDiscordOAuthCode(code);
+                break;
+            case 'github':
+                if (process.env.SOCIAL_GITHUB_ENABLE == "yes")
+                    credential = await redeemGitHubOAuthCode(code);
                 break;
         }
 

@@ -57,7 +57,7 @@ export async function redeemDiscordOAuthCode(code: string) {
 
 export async function verifyDiscordOAuth(token: string) {
     try {
-        if (process.env.SOCIAL_DISCORD_ENABLE == 'no')
+        if (process.env.SOCIAL_DISCORD_ENABLE != 'yes')
             return { success: false };
 
         const res = await fetch('https://discord.com/api/users/@me', {
@@ -73,6 +73,64 @@ export async function verifyDiscordOAuth(token: string) {
             userId: user.id,
             username: user.username,
             userEmail: user.email,
+        };
+    } catch (e) {
+        return { success: false };
+    }
+}
+
+export async function redeemGitHubOAuthCode(code: string) {
+    const body = new URLSearchParams();
+    body.append('code', code);
+    body.append('client_id', process.env.SOCIAL_GITHUB_CLIENT_ID);
+    body.append('client_secret', process.env.SOCIAL_GITHUB_CLIENT_SECRET);
+
+    const tokenRes = await fetch('https://github.com/login/oauth/access_token', {
+        method: 'POST',
+        body,
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'Accept': 'application/json',
+        },
+    });
+
+    const data = await tokenRes.json();
+    const { access_token } = data;
+
+    return access_token;
+}
+
+export async function verifyGitHubOAuth(token: string) {
+    try {
+        if (process.env.SOCIAL_GITHUB_ENABLE != 'yes')
+            return { success: false };
+
+        const res = await fetch('https://api.github.com/user', {
+            headers: {
+                authorization: `Bearer ${token}`,
+                'Accept': 'application/json',
+            },
+        });
+
+        const user = await res.json();
+
+        const emailsRes = await fetch('https://api.github.com/user/emails', {
+            headers: {
+                authorization: `Bearer ${token}`,
+                'Accept': 'application/json',
+            },
+        });
+
+        const emails = await emailsRes.json();
+
+        if (emails.length == 0) // sanity check
+            return { success: false };
+
+        return {
+            success: true,
+            userId: user.id.toString(),
+            username: user.login,
+            userEmail: emails.find(e => e.primary).email,
         };
     } catch (e) {
         return { success: false };
