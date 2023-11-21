@@ -1,4 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { MFAMethod } from '@prisma/client';
 import {
     IsEmail,
     IsNotEmpty,
@@ -20,6 +21,14 @@ export class LoginDto {
     })
     @IsNotEmpty()
     readonly password: string;
+
+    @ApiProperty({
+        description: 'MFA for the account (if needed)',
+    })
+    readonly mfa: {
+        method: MFAMethod,
+        credential: string,
+    };
 }
 
 export const strongPassOptions = {

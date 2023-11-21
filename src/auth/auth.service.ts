@@ -4,6 +4,7 @@ import {
     BadRequestException,
     ConflictException,
     UnprocessableEntityException,
+    PreconditionFailedException,
 } from '@nestjs/common';
 import { UsersService } from '../users/users.service';
 import * as argon2 from 'argon2';
@@ -14,8 +15,9 @@ import {
     verifyGitHubOAuth,
     verifyGoogleToken,
 } from 'src/social';
-import { SocialProvider } from '@prisma/client';
+import { MFAMethod, SocialProvider } from '@prisma/client';
 import { strongPassOptions } from 'src/dto/auth.dto';
+import { totpIsValid } from 'src/mfa';
 
 @Injectable()
 export class AuthService {
@@ -24,13 +26,36 @@ export class AuthService {
         private jwtService: JwtService,
     ) {}
 
-    async signIn(username: string, pass: string): Promise<any> {
+    async signIn(username: string, pass: string, mfa?: { method: MFAMethod, credential: string }): Promise<any> {
         if (!username || !(await this.usersService.existsUsername(username)))
             throw new UnauthorizedException();
 
-        const user = await this.usersService.findOneUsername(username);
+        const user = await this.usersService.findOneUsername(username, false, true);
         if (!user?.passHash || !(await argon2.verify(user?.passHash, pass)))
             throw new UnauthorizedException();
+
+        if (user.mfaMethods.length > 0) {
+            if (!mfa) {
+                throw new PreconditionFailedException({
+                    mfaMethods: user.mfaMethods.map(m => m.method),
+                });
+            } else {
+                let mfaSuccess = false;
+                let mfaMethod = user.mfaMethods.find(m => m.method == mfa.method);
+                if (mfaMethod) {
+                    switch (mfa.method) {
+                        case 'TOTP':
+                            mfaSuccess = totpIsValid(mfa.credential, mfaMethod.secret);
+                            break;
+                        // case 'KEY':
+                        //     break;
+                    }
+                }
+
+                if (!mfaSuccess)
+                    throw new UnauthorizedException();
+            }
+        }
 
         const accessPayload = {
             typ: 'a',

@@ -16,28 +16,39 @@ import { jwtConstants } from 'src/auth/constants';
 import { Token } from 'src/auth/auth.guard';
 import { sendResetEmail, sendVerifyEmail } from 'src/email';
 import { JwtService } from '@nestjs/jwt';
+import { genTotpSecret } from 'src/mfa';
 const prisma = new PrismaClient();
 
 @Injectable()
 export class UsersService {
-    constructor(private readonly jwtService: JwtService) {}
+    constructor(private readonly jwtService: JwtService) { }
 
     async findOneId(
         id: bigint,
         includeSocial?: boolean,
+        includeMFA?: boolean,
     ): Promise<User | undefined | any> {
         const socialLogins = includeSocial
             ? {
-                  select: {
-                      provider: includeSocial,
-                      providerId: includeSocial,
-                      socialName: includeSocial,
-                  },
-              }
+                select: {
+                    provider: includeSocial,
+                    providerId: includeSocial,
+                    socialName: includeSocial,
+                },
+            }
             : false;
+        const mfaMethods = includeMFA
+            ? {
+                select: {
+                    method: includeMFA,
+                    secret: includeMFA,
+                },
+            }
+            : false;
+
         const user = await prisma.user.findUnique({
             where: { id },
-            include: { socialLogins },
+            include: { socialLogins, mfaMethods },
         });
         if (!user) {
             throw new Error("Account doesn't exist");
@@ -55,8 +66,33 @@ export class UsersService {
         return user;
     }
 
-    async findOneUsername(username: string): Promise<User | undefined> {
-        const user = await prisma.user.findUnique({ where: { username } });
+    async findOneUsername(
+        username: string,
+        includeSocial?: boolean,
+        includeMFA?: boolean,
+    ): Promise<User | undefined | any> {
+        const socialLogins = includeSocial
+            ? {
+                select: {
+                    provider: includeSocial,
+                    providerId: includeSocial,
+                    socialName: includeSocial,
+                },
+            }
+            : false;
+        const mfaMethods = includeMFA
+            ? {
+                select: {
+                    method: includeMFA,
+                    secret: includeMFA,
+                },
+            }
+            : false;
+
+        const user = await prisma.user.findUnique({
+            where: { username },
+            include: { socialLogins, mfaMethods },
+        });
         if (!user) {
             throw new Error("Account doesn't exist");
         }
@@ -350,6 +386,36 @@ export class UsersService {
         } catch (e) {
             console.log(e);
             throw new ForbiddenException('Password change failed');
+        }
+    }
+
+    async addTotp(
+        userId: bigint,
+    ): Promise<any> {
+        const user = await this.findOneId(userId);
+        if (!user)
+            return new ForbiddenException();
+
+        const secret = genTotpSecret();
+
+        try {
+            await prisma.mFADetail.create({
+                data: {
+                    userId: user.id,
+                    method: 'TOTP',
+                    secret,
+                }
+            });
+        } catch (e) {
+            return {
+                success: false,
+                msg: "Couldn't setup one-time password",
+            }
+        }
+
+        return {
+            success: true,
+            secret,
         }
     }
 }

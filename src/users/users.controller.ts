@@ -25,6 +25,8 @@ export class UsersController {
             verified: req.user.verified,
             socialLogins:
                 req.auth.appId == null ? req.user.socialLogins : undefined,
+            mfaMethods:
+                req.auth.appId == null ? req.user.mfaMethods.map(m => m.method) : undefined,
             hasPassword:
                 req.auth.appId == null ? req.user.hasPassword : undefined,
         };

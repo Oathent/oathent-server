@@ -177,7 +177,7 @@ export class AuthGuard implements CanActivate {
             if (!(await this.usersService.existsId(payload.sub)))
                 throw new UnauthorizedException();
 
-            const user = await this.usersService.findOneId(payload.sub, true);
+            const user = await this.usersService.findOneId(payload.sub, true, true);
 
             if (authOptVerified && !user.verified)
                 throw new UnauthorizedException('Account not verified');
@@ -194,6 +194,7 @@ export class AuthGuard implements CanActivate {
                 email: user.email,
                 verified: user.verified,
                 socialLogins: user.socialLogins,
+                mfaMethods: user.mfaMethods,
                 hasPassword: user.passHash != null,
             };
 

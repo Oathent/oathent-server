@@ -54,7 +54,7 @@ export class AuthController {
     @RateLimit(RateLimitEnv('auth/login', 5))
     @Post('login')
     signIn(@Body() loginDto: LoginDto) {
-        return this.authService.signIn(loginDto.username, loginDto.password);
+        return this.authService.signIn(loginDto.username, loginDto.password, loginDto.mfa);
     }
 
     @ApiOperation({ summary: 'Register to to create a new account' })
@@ -301,5 +301,35 @@ export class AuthController {
             changePasswordDto.password,
             changePasswordDto.oldPassword,
         );
+    }
+
+    @ApiOperation({ summary: 'Add TOTP to account' })
+    @ApiOkResponse({ description: 'Success' })
+    @ApiForbiddenResponse({ description: 'Forbidden' })
+    @RateLimit(RateLimitEnv('auth/totp', 10))
+    @Post('totp')
+    @UseAuth(Token.ACCESS, { account: true })
+    addTotp(
+        @Request() req,
+    ) {
+        return this.usersService.addTotp(
+            req.user.id,
+        );
+    }
+
+    @ApiOperation({ summary: 'Add TOTP to account' })
+    @ApiOkResponse({ description: 'Success' })
+    @ApiForbiddenResponse({ description: 'Forbidden' })
+    @RateLimit(RateLimitEnv('auth/totp', 10))
+    @Get('totp')
+    @UseAuth(Token.ACCESS, { account: true })
+    getTotp(
+        @Request() req,
+    ) {
+        let totpMethod = req.user.mfaMethods.find(m => m.method == 'TOTP');
+        return {
+            success: !!totpMethod,
+            secret: totpMethod?.secret,
+        }
     }
 }

@@ -14,6 +14,15 @@ enum MFAMethod {
   TOTP
 }
 
+model MFADetail {
+  User   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId BigInt
+  method MFAMethod
+  secret String
+
+  @@id([userId, method])
+}
+
 model User {
   id         BigInt        @id
   email      String        @unique
@@ -25,7 +34,7 @@ model User {
   // Account security
   passHash     String?
   socialLogins SocialLogin[]
-  mfaMethod    MFAMethod?
+  mfaMethods   MFADetail[]
 
   // flags
   verified Boolean @default(false)
@@ -45,8 +54,8 @@ model SocialLogin {
   User       User           @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId     BigInt
 
-  @@unique([provider, providerId])
   @@id([userId, provider])
+  @@unique([provider, providerId])
 }
 
 model Application {
