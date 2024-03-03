@@ -28,6 +28,15 @@ class ThrottlerBehindProxyGuard extends ThrottlerGuard {
         return req.ips.length ? req.ips[0] : req.ip;
     }
 
+    protected async handleRequest(context: ExecutionContext, limit: number, ttl: number): Promise<boolean> {
+        const request = context.switchToHttp().getRequest();
+        if (process.env.RATE_LIMIT_BYPASS_KEY && request.headers['rate-limit-bypass-key'] == process.env.RATE_LIMIT_BYPASS_KEY) {
+            return true;
+        }
+
+        return await super.handleRequest(context, limit, ttl);
+    }
+
     protected throwThrottlingException(context: ExecutionContext) {
         throw new ThrottlerException('Too many requests');
     }
