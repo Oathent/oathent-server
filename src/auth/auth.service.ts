@@ -26,35 +26,48 @@ export class AuthService {
         private jwtService: JwtService,
     ) {}
 
-    async signIn(username: string, pass: string, mfa?: { method: MFAMethod, credential: string }): Promise<any> {
+    async signIn(
+        username: string,
+        pass: string,
+        mfa?: { method: MFAMethod; credential: string },
+    ): Promise<any> {
         if (!username || !(await this.usersService.existsUsername(username)))
             throw new UnauthorizedException();
 
-        const user = await this.usersService.findOneUsername(username, false, true);
+        const user = await this.usersService.findOneUsername(
+            username,
+            false,
+            true,
+        );
+
+        if (user?.mfaMethods.length > 0 && !mfa) {
+            throw new PreconditionFailedException({
+                mfaMethods: user.mfaMethods.map((m) => m.method),
+            });
+        }
+
         if (!user?.passHash || !(await argon2.verify(user?.passHash, pass)))
             throw new UnauthorizedException();
 
         if (user.mfaMethods.length > 0) {
-            if (!mfa) {
-                throw new PreconditionFailedException({
-                    mfaMethods: user.mfaMethods.map(m => m.method),
-                });
-            } else {
-                let mfaSuccess = false;
-                let mfaMethod = user.mfaMethods.find(m => m.method == mfa.method);
-                if (mfaMethod) {
-                    switch (mfa.method) {
-                        case 'TOTP':
-                            mfaSuccess = totpIsValid(mfa.credential, mfaMethod.secret);
-                            break;
-                        // case 'KEY':
-                        //     break;
-                    }
+            let mfaSuccess = false;
+            const mfaMethod = user.mfaMethods.find(
+                (m) => m.method == mfa.method,
+            );
+            if (mfaMethod) {
+                switch (mfa.method) {
+                    case 'TOTP':
+                        mfaSuccess = totpIsValid(
+                            mfa.credential,
+                            mfaMethod.secret,
+                        );
+                        break;
+                    // case 'KEY':
+                    //     break;
                 }
-
-                if (!mfaSuccess)
-                    throw new UnauthorizedException();
             }
+
+            if (!mfaSuccess) throw new UnauthorizedException();
         }
 
         const accessPayload = {
