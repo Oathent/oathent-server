@@ -2,6 +2,7 @@ import {
     Injectable,
     ForbiddenException,
     UnauthorizedException,
+    BadRequestException,
 } from '@nestjs/common';
 import * as argon2 from 'argon2';
 
@@ -17,7 +18,7 @@ import { jwtConstants } from 'src/auth/constants';
 import { Token } from 'src/auth/auth.guard';
 import { sendResetEmail, sendVerifyEmail } from 'src/email';
 import { JwtService } from '@nestjs/jwt';
-import { genTotpSecret, generateWebAuthnAuthenticationOptions, generateWebAuthnRegistrationOptions, verifyWebAuthnRegistrationResponse } from 'src/mfa';
+import { genTotpSecret, generateWebAuthnAuthenticationOptions, generateWebAuthnRegistrationOptions, totpIsValid, verifyWebAuthnRegistrationResponse, webAuthnIsValid } from 'src/mfa';
 import type { PublicKeyCredentialCreationOptionsJSON, RegistrationResponseJSON, PublicKeyCredentialRequestOptionsJSON } from '@simplewebauthn/types';
 const prisma = new PrismaClient();
 
@@ -421,6 +422,63 @@ export class UsersService {
         }
     }
 
+    async removeTotp(
+        userId: bigint,
+        credential: string,
+    ): Promise<any> {
+        const user = await this.findOneId(userId);
+        if (!user)
+            return new ForbiddenException();
+
+        try {
+            let mfaDetail = await prisma.mFADetail.findUnique({
+                where: {
+                    userId_method: {
+                        userId: user.id,
+                        method: 'TOTP',
+                    },
+                }
+            });
+
+            if (!mfaDetail) {
+                throw new BadRequestException();
+            }
+
+            let valid = totpIsValid(
+                credential,
+                mfaDetail.secret,
+            );
+
+            if (!valid) {
+                throw new ForbiddenException();
+            }
+
+            await prisma.mFADetail.delete({
+                where: {
+                    userId_method: {
+                        userId: user.id,
+                        method: 'TOTP',
+                    },
+                }
+            });
+        } catch (e) {
+            if (e instanceof BadRequestException) {
+                throw new BadRequestException();
+            }
+            if (e instanceof ForbiddenException) {
+                throw new ForbiddenException();
+            }
+            return {
+                success: false,
+                msg: "Couldn't remove one-time password 2FA method",
+            }
+        }
+
+        return {
+            success: true,
+        }
+    }
+
     async getPasskeys(user: User): Promise<Passkey[]> {
         return await prisma.passkey.findMany({
             where: {
@@ -429,27 +487,53 @@ export class UsersService {
         });
     }
 
-    async deletePasskey(user: User, id: string) {
-        await prisma.passkey.delete({
+    async deletePasskey(user: User, id: string, credential: string) {
+        let mfaDetail = await prisma.mFADetail.findUnique({
             where: {
-                id,
+                userId_method: {
+                    userId: user.id,
+                    method: 'WEB_AUTHN',
+                }
             },
+            include: {
+                passKeys: true,
+            }
         });
 
-        let passkeys = await this.getPasskeys(user);
-
-        if (passkeys.length == 0) {
-            await prisma.mFADetail.delete({
-                where: {
-                    userId_method: {
-                        userId: user.id,
-                        method: 'WEB_AUTHN',
-                    },
-                },
-            });
+        if (!mfaDetail) {
+            throw new BadRequestException();
         }
 
-        return passkeys;
+        let valid = await webAuthnIsValid(
+            user.id,
+            mfaDetail.passKeys,
+            credential,
+        );
+
+        if (!valid) {
+            throw new UnauthorizedException();
+        } else {
+            await prisma.passkey.delete({
+                where: {
+                    id,
+                },
+            });
+
+            let passkeys = await this.getPasskeys(user);
+
+            if (passkeys.length == 0) {
+                await prisma.mFADetail.delete({
+                    where: {
+                        userId_method: {
+                            userId: user.id,
+                            method: 'WEB_AUTHN',
+                        },
+                    },
+                });
+            }
+
+            return passkeys;
+        }
     }
 
     async genWebAuthnRegisterOpts(user: User): Promise<{ success: boolean, options?: PublicKeyCredentialCreationOptionsJSON }> {
