@@ -278,8 +278,11 @@ export class AuthController {
     @RateLimit(RateLimitEnv('auth/delete', 5))
     @Post('delete')
     @UseAuth(Token.ACCESS, { account: true })
-    accountDelete(@Request() req) {
-        return this.authService.handleDeleteAccount(req.user.id);
+    accountDelete(
+        @Request() req,
+        @Body() body: { password?: string },
+    ) {
+        return this.authService.handleDeleteAccount(req.user.id, body.password);
     }
 
     @ApiOperation({ summary: 'Update password on account' })

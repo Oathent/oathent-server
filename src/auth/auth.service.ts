@@ -15,7 +15,7 @@ import {
     verifyGitHubOAuth,
     verifyGoogleToken,
 } from 'src/social';
-import { MFAMethod, SocialProvider } from '@prisma/client';
+import { MFAMethod, SocialProvider, User } from '@prisma/client';
 import { strongPassOptions } from 'src/dto/auth.dto';
 import { totpIsValid, webAuthnIsValid } from 'src/mfa';
 
@@ -418,11 +418,25 @@ export class AuthService {
         }
     }
 
-    async handleDeleteAccount(id: bigint): Promise<any> {
+    async handleDeleteAccount(userId: bigint, password?: string): Promise<any> {
         try {
-            await this.usersService.deleteAccount(id);
+            const user = await this.usersService.findOneId(userId);
+
+            // If user has password, verify it
+            if (user.passHash) {
+                if (!password || password.length == 0) {
+                    throw new BadRequestException('Password required');
+                }
+                console.log(await argon2.verify(user.passHash, password))
+                if (!(await argon2.verify(user.passHash, password))) {
+                    throw new UnauthorizedException();
+                }
+            }
+
+            await this.usersService.deleteAccount(user.id);
             return { success: true };
         } catch (e) {
+            console.log(e)
             return { success: false };
         }
     }
