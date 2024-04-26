@@ -317,6 +317,22 @@ export class AuthController {
     @ApiOkResponse({ description: 'Success' })
     @ApiForbiddenResponse({ description: 'Forbidden' })
     @RateLimit(RateLimitEnv('auth/totp', 10))
+    @Delete('totp')
+    @UseAuth(Token.ACCESS, { account: true })
+    removeTotp(
+        @Request() req,
+        @Body() body: { credential: string },
+    ) {
+        return this.usersService.removeTotp(
+            req.user.id,
+            body.credential,
+        );
+    }
+
+    @ApiOperation({ summary: 'Add TOTP to account' })
+    @ApiOkResponse({ description: 'Success' })
+    @ApiForbiddenResponse({ description: 'Forbidden' })
+    @RateLimit(RateLimitEnv('auth/totp', 10))
     @Get('totp')
     @UseAuth(Token.ACCESS, { account: true })
     getTotp(
@@ -398,12 +414,13 @@ export class AuthController {
     async deleteWebAuthn(
         @Request() req,
         @Param('id') id: string,
+        @Body() body: { credential: string },
     ) {
-        let totpMethod = req.user.mfaMethods.find(m => m.method == 'WEB_AUTHN');
-        if (!totpMethod)
+        let webAuthnMethod = req.user.mfaMethods.find(m => m.method == 'WEB_AUTHN');
+        if (!webAuthnMethod)
             return { success: false };
 
-        let passkeys = await this.usersService.deletePasskey(req.user, id);
+        let passkeys = await this.usersService.deletePasskey(req.user, id, body.credential);
         return {
             success: true,
             keys: passkeys.map(p => {
