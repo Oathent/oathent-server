@@ -1,3 +1,5 @@
+// TOTP
+
 import { createHmac, randomBytes, timingSafeEqual } from "crypto";
 
 function base32Encode(buf: Buffer, padding?: boolean) {
@@ -122,4 +124,127 @@ export function totpIsValid(token: string, secret: string): boolean {
     }
 
     return delta != null;
+}
+
+// WebAuthn
+
+import type {
+    PublicKeyCredentialCreationOptionsJSON,
+    RegistrationResponseJSON,
+    PublicKeyCredentialRequestOptionsJSON,
+    AuthenticationResponseJSON,
+} from '@simplewebauthn/types';
+
+import {
+    VerifiedRegistrationResponse,
+    generateAuthenticationOptions,
+    generateRegistrationOptions,
+    verifyAuthenticationResponse,
+    verifyRegistrationResponse,
+} from '@simplewebauthn/server';
+import { protocolPorts } from "./email";
+import { Passkey, User } from "@prisma/client";
+
+const rpName = process.env.WEB_AUTHN_RP_NAME ?? 'Oathent Server';
+const rpID = process.env.WEB_AUTHN_RP_ID ?? process.env.SERVER_ADDRESS ?? 'localhost';
+const origin = process.env.WEB_AUTHN_RP_ORIGIN ?? process.env.SERVER_ADDRESS ?? 'localhost';
+
+const webAuthnRegistrationOptions = new Map<bigint, PublicKeyCredentialCreationOptionsJSON>();
+const webAuthnAuthenticationOptions = new Map<bigint, PublicKeyCredentialRequestOptionsJSON>();
+
+export async function generateWebAuthnRegistrationOptions(user: User, existingPasskeys: Passkey[]): Promise<{ success: boolean, options?: PublicKeyCredentialCreationOptionsJSON }> {
+    try {
+        const options: PublicKeyCredentialCreationOptionsJSON = await generateRegistrationOptions({
+            rpName,
+            rpID,
+            userName: user.username,
+            // Don't prompt users for additional information about the authenticator
+            // (Recommended for smoother UX)
+            attestationType: 'none',
+            // Prevent users from re-registering existing authenticators
+            excludeCredentials: existingPasskeys.map(passkey => ({
+                id: passkey.id,
+            })),
+            // See "Guiding use of authenticators via authenticatorSelection" below
+            authenticatorSelection: {
+                // Defaults
+                residentKey: 'preferred',
+                userVerification: 'preferred',
+            },
+        });
+
+        // Remember these options for the user
+        webAuthnRegistrationOptions.set(user.id, options);
+
+        return { success: true, options };
+    } catch (error) {
+        return { success: false };
+    }
+}
+
+export async function verifyWebAuthnRegistrationResponse(user: User, response: RegistrationResponseJSON): Promise<{ success: boolean, verification?: VerifiedRegistrationResponse }> {
+    const currentOptions = webAuthnRegistrationOptions.get(user.id);
+
+    try {
+        let verification = await verifyRegistrationResponse({
+            response,
+            expectedChallenge: currentOptions.challenge,
+            expectedOrigin: origin,
+            expectedRPID: rpID,
+            requireUserVerification: currentOptions.authenticatorSelection?.userVerification === 'required',
+        });
+
+        return { success: verification.verified, verification };
+    } catch (error) {
+        return { success: false };
+    }
+}
+
+export async function generateWebAuthnAuthenticationOptions(user: User, existingPasskeys: Passkey[]): Promise<{ success: boolean, options?: PublicKeyCredentialRequestOptionsJSON }> {
+    try {
+        const options: PublicKeyCredentialRequestOptionsJSON = await generateAuthenticationOptions({
+            rpID,
+            // Require users to use a previously-registered authenticator
+            allowCredentials: existingPasskeys.map(passkey => ({
+                id: passkey.id,
+            })),
+        });
+
+        // Remember these options for the user
+        webAuthnAuthenticationOptions.set(user.id, options);
+
+        return { success: true, options };
+    } catch (error) {
+        return { success: false };
+    }
+}
+
+export async function webAuthnIsValid(userId: bigint, existingPasskeys: Passkey[], credential: string): Promise<boolean> {
+    if (!existingPasskeys.length) {
+        return false;
+    }
+
+    try {
+        const body: AuthenticationResponseJSON = JSON.parse(credential);
+        const currentOptions = webAuthnAuthenticationOptions.get(userId);
+
+        let passkey = existingPasskeys.find(passkey => passkey.id === body.id);
+
+        let verification = await verifyAuthenticationResponse({
+            response: body,
+            expectedChallenge: currentOptions.challenge,
+            expectedOrigin: origin,
+            expectedRPID: rpID,
+            requireUserVerification: currentOptions.userVerification === 'required',
+            authenticator: {
+                credentialID: passkey.id,
+                credentialPublicKey: passkey.publicKey,
+                counter: Number(passkey.counter),
+            },
+        });
+
+        return verification.verified;
+    } catch (e) {
+        return false;
+    }
 }

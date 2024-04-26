@@ -6,6 +6,7 @@ import {
 import * as argon2 from 'argon2';
 
 import {
+    Passkey,
     PrismaClient,
     SocialLogin,
     SocialProvider,
@@ -16,7 +17,8 @@ import { jwtConstants } from 'src/auth/constants';
 import { Token } from 'src/auth/auth.guard';
 import { sendResetEmail, sendVerifyEmail } from 'src/email';
 import { JwtService } from '@nestjs/jwt';
-import { genTotpSecret } from 'src/mfa';
+import { genTotpSecret, generateWebAuthnAuthenticationOptions, generateWebAuthnRegistrationOptions, verifyWebAuthnRegistrationResponse } from 'src/mfa';
+import type { PublicKeyCredentialCreationOptionsJSON, RegistrationResponseJSON, PublicKeyCredentialRequestOptionsJSON } from '@simplewebauthn/types';
 const prisma = new PrismaClient();
 
 @Injectable()
@@ -417,5 +419,97 @@ export class UsersService {
             success: true,
             secret,
         }
+    }
+
+    async getPasskeys(user: User): Promise<Passkey[]> {
+        return await prisma.passkey.findMany({
+            where: {
+                mfaDetailUserId: user.id,
+            },
+        });
+    }
+
+    async deletePasskey(user: User, id: string) {
+        await prisma.passkey.delete({
+            where: {
+                id,
+            },
+        });
+
+        let passkeys = await this.getPasskeys(user);
+
+        if (passkeys.length == 0) {
+            await prisma.mFADetail.delete({
+                where: {
+                    userId_method: {
+                        userId: user.id,
+                        method: 'WEB_AUTHN',
+                    },
+                },
+            });
+        }
+
+        return passkeys;
+    }
+
+    async genWebAuthnRegisterOpts(user: User): Promise<{ success: boolean, options?: PublicKeyCredentialCreationOptionsJSON }> {
+        let existingPasskeys: Passkey[] = await this.getPasskeys(user);
+
+        return await generateWebAuthnRegistrationOptions(user, existingPasskeys);
+    }
+
+    async registerWebAuthn(
+        user: User,
+        response: RegistrationResponseJSON
+    ): Promise<{ success: boolean }> {
+        const { success, verification } = await verifyWebAuthnRegistrationResponse(user, response);
+
+        if (success) {
+            const { registrationInfo } = verification;
+
+            const passkey = {
+                id: registrationInfo.credentialID,
+                publicKey: Buffer.from(registrationInfo.credentialPublicKey),
+                counter: registrationInfo.counter,
+                registeredAt: new Date(),
+            };
+
+            await prisma.mFADetail.upsert({
+                where: {
+                    userId_method: {
+                        userId: user.id,
+                        method: 'WEB_AUTHN',
+                    },
+                },
+                create: {
+                    userId: user.id,
+                    method: 'WEB_AUTHN',
+                    passKeys: {
+                        create: [passkey]
+                    }
+                },
+                update: {
+                    passKeys: {
+                        create: [passkey]
+                    }
+                },
+            });
+        }
+
+        return { success };
+    }
+
+    async genWebAuthnAuthOpts(username: string): Promise<{ success: boolean, options?: PublicKeyCredentialRequestOptionsJSON }> {
+        const user = await this.findOneUsername(username);
+        if (!user)
+            throw new ForbiddenException();
+
+        let existingPasskeys: Passkey[] = await prisma.passkey.findMany({
+            where: {
+                mfaDetailUserId: user.id,
+            },
+        });
+
+        return await generateWebAuthnAuthenticationOptions(user, existingPasskeys);
     }
 }

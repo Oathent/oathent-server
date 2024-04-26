@@ -10,6 +10,7 @@ import {
     Param,
     Res,
     Patch,
+    Delete,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { Token, UseAuth } from './auth.guard';
@@ -34,11 +35,14 @@ import {
     SocialLoginDto,
     SocialRegisterDto,
     SocialUnlinkDto,
+    WebAuthnRegistrationDto,
 } from 'src/dto/auth.dto';
 import { RateLimit, RateLimitEnv } from 'src/ratelimit.guard';
 import { readFile } from 'fs/promises';
 import { protocolPorts } from 'src/email';
 import { redeemDiscordOAuthCode, redeemGitHubOAuthCode } from 'src/social';
+import { generateWebAuthnRegistrationOptions, verifyWebAuthnRegistrationResponse } from 'src/mfa';
+import type { RegistrationResponseJSON } from '@simplewebauthn/types';
 
 @ApiTags('auth')
 @Controller('auth')
@@ -46,12 +50,12 @@ export class AuthController {
     constructor(
         private authService: AuthService,
         private usersService: UsersService,
-    ) {}
+    ) { }
 
     @ApiOperation({ summary: 'Login to an existing account' })
     @ApiOkResponse({ description: 'Account tokens', type: AuthResponse })
     @HttpCode(HttpStatus.OK)
-    @RateLimit(RateLimitEnv('auth/login', 5))
+    @RateLimit(RateLimitEnv('auth/login', 10))
     @Post('login')
     signIn(@Body() loginDto: LoginDto) {
         return this.authService.signIn(loginDto.username, loginDto.password, loginDto.mfa);
@@ -211,31 +215,25 @@ export class AuthController {
     ) {
         const protocol =
             process.env.USE_HTTP.toLowerCase() == 'yes' ? 'http' : 'https';
-        const redirect = `${protocol}://${
-            process.env.SERVER_ADDRESS || 'localhost'
-        }${
-            process.env.SERVER_PORT &&
-            Number(process.env.SERVER_PORT) != protocolPorts[protocol]
+        const redirect = `${protocol}://${process.env.SERVER_ADDRESS || 'localhost'
+            }${process.env.SERVER_PORT &&
+                Number(process.env.SERVER_PORT) != protocolPorts[protocol]
                 ? ':' + process.env.SERVER_PORT
                 : ''
-        }/auth/social/oauth/${provider}/callback`;
+            }/auth/social/oauth/${provider}/callback`;
 
         switch (provider) {
             case 'discord':
                 res.redirect(
-                    `https://discord.com/api/oauth2/authorize?client_id=${
-                        process.env.SOCIAL_DISCORD_CLIENT_ID
-                    }&redirect_uri=${redirect}&response_type=code&scope=identify%20email${
-                        intent ? `&state=${intent}` : ''
+                    `https://discord.com/api/oauth2/authorize?client_id=${process.env.SOCIAL_DISCORD_CLIENT_ID
+                    }&redirect_uri=${redirect}&response_type=code&scope=identify%20email${intent ? `&state=${intent}` : ''
                     }`,
                 );
                 break;
             case 'github':
                 res.redirect(
-                    `https://github.com/login/oauth/authorize?client_id=${
-                        process.env.SOCIAL_GITHUB_CLIENT_ID
-                    }&redirect_uri=${redirect}&response_type=code&scope=identify%20email${
-                        intent ? `&state=${intent}` : ''
+                    `https://github.com/login/oauth/authorize?client_id=${process.env.SOCIAL_GITHUB_CLIENT_ID
+                    }&redirect_uri=${redirect}&response_type=code&scope=identify%20email${intent ? `&state=${intent}` : ''
                     }`,
                 );
                 break;
@@ -268,10 +266,8 @@ export class AuthController {
         }
 
         res.redirect(
-            `${
-                process.env.SOCIAL_OAUTH_REDIRECT
-            }?provider=${provider}&credential=${credential}${
-                state ? `&intent=${state}` : ''
+            `${process.env.SOCIAL_OAUTH_REDIRECT
+            }?provider=${provider}&credential=${credential}${state ? `&intent=${state}` : ''
             }`,
         );
     }
@@ -330,6 +326,92 @@ export class AuthController {
         return {
             success: !!totpMethod,
             secret: totpMethod?.secret,
+        }
+    }
+
+    @ApiOperation({ summary: 'Generate WebAuthn registration options' })
+    @ApiOkResponse({ description: 'Success' })
+    @RateLimit(RateLimitEnv('auth/webauthn/opts/register', 10))
+    @Get('webauthn/opts/register')
+    @UseAuth(Token.ACCESS, { account: true })
+    generateWebAuthnRegistrationOptions(
+        @Request() req,
+    ) {
+        return this.usersService.genWebAuthnRegisterOpts(req.user);
+    }
+
+
+    @ApiOperation({ summary: 'Generate WebAuthn options' })
+    @ApiOkResponse({ description: 'Success' })
+    @RateLimit(RateLimitEnv('auth/webauthn/register', 10))
+    @Post('webauthn/register')
+    @UseAuth(Token.ACCESS, { account: true })
+    verifyWebAuthnRegistration(
+        @Request() req,
+        @Body() registrationDto: WebAuthnRegistrationDto,
+    ) {
+        return this.usersService.registerWebAuthn(req.user, registrationDto);
+    }
+
+    @ApiOperation({ summary: 'Generate WebAuthn authentication options' })
+    @ApiOkResponse({ description: 'Success' })
+    @RateLimit(RateLimitEnv('auth/webauthn/opts/authenticate', 10))
+    @Get('webauthn/opts/authenticate')
+    generateWebAuthnAuthenticationOptions(
+        @Request() req,
+        @Query('username') username: string,
+    ) {
+        return this.usersService.genWebAuthnAuthOpts(username);
+    }
+
+    @ApiOperation({ summary: 'Get WebAuthn keys' })
+    @ApiOkResponse({ description: 'Success' })
+    @ApiForbiddenResponse({ description: 'Forbidden' })
+    @RateLimit(RateLimitEnv('auth/webauthn', 10))
+    @Get('webauthn')
+    @UseAuth(Token.ACCESS, { account: true })
+    async getWebAuthn(
+        @Request() req,
+    ) {
+        let totpMethod = req.user.mfaMethods.find(m => m.method == 'WEB_AUTHN');
+        if (!totpMethod)
+            return { success: false };
+
+        let passkeys = await this.usersService.getPasskeys(req.user);
+        return {
+            success: true,
+            keys: passkeys.map(p => {
+                return {
+                    id: p.id,
+                    added: p.registeredAt,
+                }
+            }),
+        }
+    }
+
+    @ApiOperation({ summary: 'Delete a WebAuthn key' })
+    @ApiOkResponse({ description: 'Success' })
+    @ApiForbiddenResponse({ description: 'Forbidden' })
+    @RateLimit(RateLimitEnv('auth/webauthn', 10))
+    @Delete('webauthn/:id')
+    @UseAuth(Token.ACCESS, { account: true })
+    async deleteWebAuthn(
+        @Request() req,
+        @Param('id') id: string,
+    ) {
+        let totpMethod = req.user.mfaMethods.find(m => m.method == 'WEB_AUTHN');
+        if (!totpMethod)
+            return { success: false };
+
+        let passkeys = await this.usersService.deletePasskey(req.user, id);
+        return {
+            success: true,
+            keys: passkeys.map(p => {
+                return {
+                    id: p.id,
+                    added: p.registeredAt,
+                }
+            }),
         }
     }
 }

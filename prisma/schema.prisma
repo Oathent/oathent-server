@@ -12,15 +12,28 @@ datasource db {
 
 enum MFAMethod {
   TOTP
+  WEB_AUTHN
 }
 
 model MFADetail {
-  User   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId BigInt
-  method MFAMethod
-  secret String
+  User     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId   BigInt
+  method   MFAMethod
+  secret   String?
+  passKeys Passkey[]
 
   @@id([userId, method])
+}
+
+model Passkey {
+  id           String   @id
+  publicKey    Bytes
+  counter      BigInt
+  registeredAt DateTime
+
+  mfaDetail       MFADetail @relation(fields: [mfaDetailUserId, mfaDetailMethod], references: [userId, method], onDelete: Cascade)
+  mfaDetailUserId BigInt
+  mfaDetailMethod MFAMethod
 }
 
 model User {

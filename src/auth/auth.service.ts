@@ -17,7 +17,7 @@ import {
 } from 'src/social';
 import { MFAMethod, SocialProvider } from '@prisma/client';
 import { strongPassOptions } from 'src/dto/auth.dto';
-import { totpIsValid } from 'src/mfa';
+import { totpIsValid, webAuthnIsValid } from 'src/mfa';
 
 @Injectable()
 export class AuthService {
@@ -62,8 +62,14 @@ export class AuthService {
                             mfaMethod.secret,
                         );
                         break;
-                    // case 'KEY':
-                    //     break;
+                    case 'WEB_AUTHN':
+                        let passkeys = await this.usersService.getPasskeys(user);
+                        mfaSuccess = await webAuthnIsValid(
+                            user.id,
+                            passkeys,
+                            mfa.credential
+                        );
+                        break;
                 }
             }
 

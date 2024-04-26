@@ -180,3 +180,14 @@ export class ChangePasswordDto {
     })
     readonly password: string;
 }
+
+import type { AuthenticatorAttestationResponseJSON } from '@simplewebauthn/types';
+
+export class WebAuthnRegistrationDto {
+    readonly id: string;
+    readonly rawId: string;
+    readonly response: AuthenticatorAttestationResponseJSON;
+    readonly authenticatorAttachment?: AuthenticatorAttachment;
+    readonly clientExtensionResults: AuthenticationExtensionsClientOutputs;
+    readonly type: PublicKeyCredentialType;
+}
