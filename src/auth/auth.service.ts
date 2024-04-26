@@ -427,7 +427,6 @@ export class AuthService {
                 if (!password || password.length == 0) {
                     throw new BadRequestException('Password required');
                 }
-                console.log(await argon2.verify(user.passHash, password))
                 if (!(await argon2.verify(user.passHash, password))) {
                     throw new UnauthorizedException();
                 }
@@ -436,7 +435,6 @@ export class AuthService {
             await this.usersService.deleteAccount(user.id);
             return { success: true };
         } catch (e) {
-            console.log(e)
             return { success: false };
         }
     }
