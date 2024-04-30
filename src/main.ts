@@ -120,7 +120,8 @@ async function bootstrap() {
     console.log(chalk.blue('[Oathent]'), 'Server port:', chalk.yellow(port));
 
     let hostname = '0.0.0.0';
-    if (process.env.SERVER_ADDRESS) hostname = process.env.SERVER_ADDRESS;
+    if (process.env.BIND_ADDRESS) hostname = process.env.BIND_ADDRESS;
+    else if (process.env.SERVER_ADDRESS) hostname = process.env.SERVER_ADDRESS;
 
     console.log(
         chalk.blue('[Oathent]'),
