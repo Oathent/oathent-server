@@ -274,10 +274,15 @@ export class UsersService {
         username: string,
         provider: SocialProvider,
         providerId: string,
+        socialVerified: boolean,
         socialName?: string,
         password?: string,
     ): Promise<User | undefined> {
         const passHash = password ? await argon2.hash(password) : undefined;
+
+        let verified = process.env.DISABLE_VERIFICATION == 'yes';
+        if (!verified && process.env.TRUST_SOCIAL_VERIFY == 'yes')
+            verified = socialVerified;
 
         const user = await prisma.user.create({
             data: {
@@ -292,16 +297,11 @@ export class UsersService {
                     },
                 },
                 passHash,
-                verified:
-                    process.env.DISABLE_VERIFICATION &&
-                    process.env.DISABLE_VERIFICATION == 'yes',
+                verified,
             },
         });
 
-        if (
-            !process.env.DISABLE_VERIFICATION ||
-            process.env.DISABLE_VERIFICATION != 'yes'
-        ) {
+        if (!verified) {
             const verifyCodePayload = {
                 typ: Token.VERIFY_CODE,
                 sub: user.id,
@@ -321,6 +321,7 @@ export class UsersService {
         userId: bigint,
         provider: SocialProvider,
         providerId: string,
+        socialVerified: boolean,
         socialName?: string,
     ): Promise<SocialLogin> {
         const social = await prisma.socialLogin.create({
@@ -331,6 +332,17 @@ export class UsersService {
                 socialName,
             },
         });
+
+        if (socialVerified && process.env.TRUST_SOCIAL_VERIFY == 'yes') {
+            await prisma.user.update({
+                where: {
+                    id: userId,
+                },
+                data: {
+                    verified: true,
+                },
+            });
+        }
 
         return social;
     }

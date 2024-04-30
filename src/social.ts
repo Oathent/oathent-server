@@ -15,7 +15,8 @@ export async function verifyGoogleToken(token: string) {
         const userName = payload['name'];
         const userGivenName = payload['given_name'];
         const userEmail = payload['email'];
-        return { success: true, userId, userName, userGivenName, userEmail };
+        const verified = payload['email_verified'];
+        return { success: true, userId, userName, userGivenName, userEmail, verified }; 
     } catch (e) {
         return { success: false };
     }
@@ -73,6 +74,7 @@ export async function verifyDiscordOAuth(token: string) {
             userId: user.id,
             username: user.username,
             userEmail: user.email,
+            verified: user.verified,
         };
     } catch (e) {
         return { success: false };
@@ -135,6 +137,7 @@ export async function verifyGitHubOAuth(token: string) {
             userId: user.id.toString(),
             username: user.login,
             userEmail: emails.find((e) => e.primary).email,
+            verified: emails.find((e) => e.primary).verified,
         };
     } catch (e) {
         return { success: false };

@@ -273,35 +273,39 @@ export class AuthService {
 
         let authed = false;
         let providerId: string, email: string, socialName: string | undefined;
+        let socialVerified = false;
         let providerVal: SocialProvider;
         switch (provider) {
             case 'google': {
-                const { success, userId, userEmail, userGivenName } =
+                const { success, userId, userEmail, userGivenName, verified } =
                     await verifyGoogleToken(auth);
                 authed = success;
                 providerId = userId;
                 email = userEmail;
                 socialName = userGivenName;
+                socialVerified = verified;
                 providerVal = SocialProvider.GOOGLE;
                 break;
             }
             case 'discord': {
-                const { success, userId, username, userEmail } =
+                const { success, userId, username, userEmail, verified } =
                     await verifyDiscordOAuth(auth);
                 authed = success;
                 providerId = userId;
                 email = userEmail;
                 socialName = username;
+                socialVerified = verified;
                 providerVal = SocialProvider.DISCORD;
                 break;
             }
             case 'github': {
-                const { success, userId, username, userEmail } =
+                const { success, userId, username, userEmail, verified } =
                     await verifyGitHubOAuth(auth);
                 authed = success;
                 providerId = userId;
                 email = userEmail;
                 socialName = username;
+                socialVerified = verified;
                 providerVal = SocialProvider.GITHUB;
                 break;
             }
@@ -327,6 +331,7 @@ export class AuthService {
             username,
             providerVal,
             providerId,
+            socialVerified,
             socialName,
             pass,
         );
@@ -338,35 +343,39 @@ export class AuthService {
         auth: string,
     ): Promise<any> {
         let authed = false;
+        let socialVerified = false;
         let providerId, socialName;
         let providerVal: SocialProvider;
         switch (provider.toLowerCase()) {
             case 'google': {
-                const { success, userId, userGivenName } =
+                const { success, userId, userGivenName, verified } =
                     await verifyGoogleToken(auth);
                 authed = success;
                 providerId = userId;
                 socialName = userGivenName;
+                socialVerified = verified;
                 providerVal = SocialProvider.GOOGLE;
                 break;
             }
             case 'discord': {
-                const { success, userId, username } = await verifyDiscordOAuth(
+                const { success, userId, username, verified } = await verifyDiscordOAuth(
                     auth,
                 );
                 authed = success;
                 providerId = userId;
                 socialName = username;
+                socialVerified = verified;
                 providerVal = SocialProvider.DISCORD;
                 break;
             }
             case 'github': {
-                const { success, userId, username } = await verifyGitHubOAuth(
+                const { success, userId, username, verified } = await verifyGitHubOAuth(
                     auth,
                 );
                 authed = success;
                 providerId = userId;
                 socialName = username;
+                socialVerified = verified;
                 providerVal = SocialProvider.GITHUB;
                 break;
             }
@@ -381,6 +390,7 @@ export class AuthService {
                 id,
                 providerVal,
                 providerId,
+                socialVerified,
                 socialName,
             );
             return { success: true };
