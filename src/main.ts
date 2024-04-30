@@ -39,8 +39,8 @@ async function bootstrap() {
         port = 443;
         console.log(chalk.blue('[Oathent]'), 'Reading SSL key pair');
         httpsOptions = {
-            key: await fs.readFile('../secrets/private-key.pem'),
-            cert: await fs.readFile('../secrets/public-certificate.pem'),
+            key: await fs.readFile('./secrets/private-key.pem'),
+            cert: await fs.readFile('./secrets/public-certificate.pem'),
         };
     }
 
