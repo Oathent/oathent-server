@@ -233,7 +233,7 @@ export class AuthController {
             case 'github':
                 res.redirect(
                     `https://github.com/login/oauth/authorize?client_id=${process.env.SOCIAL_GITHUB_CLIENT_ID
-                    }&redirect_uri=${redirect}&response_type=code&scope=identify%20email${intent ? `&state=${intent}` : ''
+                    }&redirect_uri=${redirect}&response_type=code&scope=user:email${intent ? `&state=${intent}` : ''
                     }`,
                 );
                 break;
