@@ -27,4 +27,8 @@ export const jwtConstants = {
         ? Buffer.from(process.env.JWT_RESET_CODE_SECRET, 'base64')
         : randomBytes(32).toString('base64'),
     resetCodeExpiry: process.env.JWT_RESET_CODE_EXPIRY || '1d',
+
+    // Subtoken
+    subtokenAccessExpiry: process.env.JWT_SUBTOKEN_ACCESS_EXPIRY || '1h',
+    subtokenRefreshExpiry: process.env.JWT_SUBTOKEN_REFRESH_EXPIRY || '1d',
 };

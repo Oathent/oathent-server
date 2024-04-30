@@ -34,6 +34,7 @@ const DEFAULT_SCOPES: Scopes = {
     'user:identify': 0,
     'user:email': 1,
     'user:apps': 2,
+    'oauth:subtoken': 4,
 } as const;
 
 let CUSTOM_SCOPES: Scopes = {};

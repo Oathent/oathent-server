@@ -201,6 +201,7 @@ export class AuthGuard implements CanActivate {
             request['auth'] = {
                 appId: payload.app,
                 scope: payload.scp,
+                expiry: payload.exp,
             };
         } catch {
             throw new UnauthorizedException();

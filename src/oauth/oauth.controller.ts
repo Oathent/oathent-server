@@ -7,6 +7,7 @@ import {
     UnauthorizedException,
     Param,
     Get,
+    ForbiddenException,
 } from '@nestjs/common';
 import { OauthService } from './oauth.service';
 import { Token, UseAuth } from 'src/auth/auth.guard';
@@ -29,10 +30,12 @@ import {
 import {
     AuthorizeRejectDto,
     CreateDeviceCodeDto,
+    CreateSubtokenDto,
     RevokeTokenDto,
 } from 'src/dto/oauth.dto';
 import { AuthRefreshResponse, AuthResponse } from 'src/entities/auth.entity';
 import { RateLimit, RateLimitEnv } from 'src/ratelimit.guard';
+import { SCOPES } from 'src/auth/scopes';
 
 @ApiTags('oauth')
 @Controller('oauth')
@@ -178,6 +181,7 @@ export class OauthController {
         return {
             appId: req.auth.appId,
             scopes: await this.oauthService.getScopeStrings(req.auth.scope),
+            expiry: req.auth.expiry,
         };
     }
 
@@ -188,5 +192,23 @@ export class OauthController {
     @Get('/apps')
     getApps(@Request() req) {
         return this.oauthService.getAuthedApps(req.user.id);
+    }
+
+    @ApiOperation({ summary: 'Create a new subtoken' })
+    @ApiOkResponse({ description: 'The subtoken', type: AuthResponse })
+    @RateLimit(RateLimitEnv('oauth/subtoken', 25))
+    @UseAuth(Token.ACCESS, { scopes: ['oauth:subtoken'] })
+    @Post('/subtoken')
+    createSubtoken(@Request() req, @Body() createSubtokenDto: CreateSubtokenDto) {
+        const appId = req.auth.appId;
+        if (appId == null) throw new UnauthorizedException();
+
+        if (createSubtokenDto.scope & ~req.auth.scope || createSubtokenDto.scope & SCOPES['oauth:subtoken']) {
+            // Some disallowed scope has been requested
+            // (beyond scope of parent token or wabts to create more subtokens)
+            throw new ForbiddenException();
+        }
+
+        return this.oauthService.createSubtoken(req.user.id, appId, createSubtokenDto.scope);
     }
 }

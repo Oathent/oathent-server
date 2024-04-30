@@ -152,6 +152,8 @@ export class OauthService {
         userId: bigint,
         appId: bigint,
         scope: number,
+        accessExpiry: string = jwtConstants.accessExpiry,
+        refreshExpiry: string = jwtConstants.refreshExpiry,
     ): Promise<any> {
         if (!(await this.hasAuthInfo(userId, appId)))
             throw new UnauthorizedException();
@@ -176,11 +178,11 @@ export class OauthService {
         };
 
         const accessToken = await this.jwtService.signAsync(accessPayload, {
-            expiresIn: jwtConstants.accessExpiry,
+            expiresIn: accessExpiry,
             secret: authInfo.jwtSecret,
         });
         const refreshToken = await this.jwtService.signAsync(refreshPayload, {
-            expiresIn: jwtConstants.refreshExpiry,
+            expiresIn: refreshExpiry,
             secret: authInfo.jwtSecret,
         });
 
@@ -367,5 +369,12 @@ export class OauthService {
                 details: await this.getAppDetails(a.appId),
             })),
         );
+    }
+
+    async createSubtoken(userId: bigint, appId: bigint, scope: number) {
+        if (!(await this.hasAuthInfo(userId, appId)))
+            throw new UnauthorizedException();
+
+        return await this.createToken(userId, appId, scope, jwtConstants.subtokenAccessExpiry, jwtConstants.subtokenRefreshExpiry);
     }
 }

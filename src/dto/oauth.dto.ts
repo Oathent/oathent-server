@@ -41,3 +41,10 @@ export class RevokeTokenDto {
     })
     readonly appId: bigint;
 }
+
+export class CreateSubtokenDto {
+    @ApiProperty({
+        description: 'The scopes to give the token (must be present on the parent token and cannot include subtoken creation)',
+    })
+    readonly scope: number;
+}
