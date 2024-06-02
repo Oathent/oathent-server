@@ -36,6 +36,7 @@ import {
 import { AuthRefreshResponse, AuthResponse } from 'src/entities/auth.entity';
 import { RateLimit, RateLimitEnv } from 'src/ratelimit.guard';
 import { SCOPES } from 'src/auth/scopes';
+import { TokenLevel } from 'src/common';
 
 @ApiTags('oauth')
 @Controller('oauth')
@@ -96,6 +97,7 @@ export class OauthController {
             req.oauthCode.userId,
             req.oauthCode.appId,
             req.oauthCode.scope,
+            TokenLevel.OAUTH,
         );
     }
 
@@ -111,6 +113,7 @@ export class OauthController {
             req.user.id,
             req.auth.appId,
             req.auth.scope,
+            req.auth.level,
         );
     }
 
@@ -155,7 +158,7 @@ export class OauthController {
     @Post('/revoke')
     async revoke(@Request() req, @Body() revokeTokenDto: RevokeTokenDto) {
         let appId = req.auth.appId;
-        if (appId == null) {
+        if (appId == null && req.auth.level === TokenLevel.ACCOUNT) {
             if (
                 !revokeTokenDto.appId ||
                 !(await this.oauthService.appExists(appId))
@@ -165,7 +168,10 @@ export class OauthController {
             appId = revokeTokenDto.appId;
         }
 
-        return this.oauthService.revokeApp(req.user.userId, appId);
+        if (req.auth.level == TokenLevel.OAUTH_SUBTOKEN)
+            return this.oauthService.revokeAppSub(req.user.id, appId);
+
+        return this.oauthService.revokeApp(req.user.id, appId);
     }
 
     @ApiOperation({ summary: 'Gets the details of the current token' })
@@ -182,6 +188,7 @@ export class OauthController {
             appId: req.auth.appId,
             scopes: await this.oauthService.getScopeStrings(req.auth.scope),
             expiry: req.auth.expiry,
+            level: TokenLevel[req.auth.level],
         };
     }
 

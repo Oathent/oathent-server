@@ -37,3 +37,9 @@ export const timeStrToMillis = (timeString: string) =>
 export function limitScopeToMax(scope: number) {
     return scope & MAX_SCOPE;
 }
+
+export enum TokenLevel {
+    ACCOUNT = 0,
+    OAUTH = 1,
+    OAUTH_SUBTOKEN = 2,
+}

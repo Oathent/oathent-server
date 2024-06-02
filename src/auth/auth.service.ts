@@ -18,6 +18,7 @@ import {
 import { MFAMethod, SocialProvider, User } from '@prisma/client';
 import { strongPassOptions } from 'src/dto/auth.dto';
 import { totpIsValid, webAuthnIsValid } from 'src/mfa';
+import { TokenLevel } from 'src/common';
 
 @Injectable()
 export class AuthService {
@@ -82,6 +83,7 @@ export class AuthService {
             usr: user.username,
             app: null,
             scp: null,
+            lvl: TokenLevel.ACCOUNT,
         };
 
         const refreshPayload = {
@@ -90,6 +92,7 @@ export class AuthService {
             usr: user.username,
             app: null,
             scp: null,
+            lvl: TokenLevel.ACCOUNT,
         };
 
         const accessToken = await this.jwtService.signAsync(accessPayload, {
@@ -158,6 +161,7 @@ export class AuthService {
             usr: user.username,
             app: null,
             scp: null,
+            lvl: TokenLevel.ACCOUNT,
         };
 
         return {
@@ -218,6 +222,7 @@ export class AuthService {
             usr: user.username,
             app: null,
             scp: null,
+            lvl: TokenLevel.ACCOUNT,
         };
 
         const refreshPayload = {
@@ -226,6 +231,7 @@ export class AuthService {
             usr: user.username,
             app: null,
             scp: null,
+            lvl: TokenLevel.ACCOUNT,
         };
 
         const accessToken = await this.jwtService.signAsync(accessPayload, {

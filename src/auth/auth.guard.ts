@@ -21,6 +21,7 @@ import {
     ApiOperation,
 } from '@nestjs/swagger';
 import { SCOPES, filterScopes } from './scopes';
+import { TokenLevel } from 'src/common';
 
 export const AUTH_KEY_TYPE = 'authKeyType';
 export const AUTH_OPT_SCOPES = 'authOptScopes';
@@ -85,7 +86,7 @@ export class AuthGuard implements CanActivate {
         @Inject(forwardRef(() => OauthService))
         private oauthService: OauthService,
         private reflector: Reflector,
-    ) {}
+    ) { }
 
     async canActivate(context: ExecutionContext): Promise<boolean> {
         const request = context.switchToHttp().getRequest();
@@ -140,6 +141,9 @@ export class AuthGuard implements CanActivate {
                     break;
             }
 
+            if (authOptAccount && data.lvl !== TokenLevel.ACCOUNT)
+                throw new UnauthorizedException();
+
             if (data.app) {
                 if (
                     authOptAccount ||
@@ -152,6 +156,13 @@ export class AuthGuard implements CanActivate {
                     data.app,
                 );
                 secret = authInfo.jwtSecret;
+
+                if (
+                    data.lvl == TokenLevel.OAUTH_SUBTOKEN
+                    && authInfo.lastSubRevoke
+                    && data.iat <= authInfo.lastSubRevoke.getTime() / 1000
+                )
+                    throw new UnauthorizedException();
             }
 
             const payload = await this.jwtService.verifyAsync(token, {
@@ -202,6 +213,7 @@ export class AuthGuard implements CanActivate {
                 appId: payload.app,
                 scope: payload.scp,
                 expiry: payload.exp,
+                level: payload.lvl,
             };
         } catch {
             throw new UnauthorizedException();

@@ -9,7 +9,7 @@ import { JwtService } from '@nestjs/jwt';
 import { Auth, PrismaClient } from '@prisma/client';
 import { randomBytes } from 'crypto';
 import { jwtConstants } from 'src/auth/constants';
-import { limitScopeToMax } from 'src/common';
+import { TokenLevel, limitScopeToMax } from 'src/common';
 import { UsersService } from 'src/users/users.service';
 import {
     addDeviceCodeInfo,
@@ -152,6 +152,7 @@ export class OauthService {
         userId: bigint,
         appId: bigint,
         scope: number,
+        level: TokenLevel = TokenLevel.OAUTH,
         accessExpiry: string = jwtConstants.accessExpiry,
         refreshExpiry: string = jwtConstants.refreshExpiry,
     ): Promise<any> {
@@ -167,6 +168,7 @@ export class OauthService {
             usr: user.username,
             app: appId,
             scp: limitScopeToMax(scope),
+            lvl: level,
         };
 
         const refreshPayload = {
@@ -175,6 +177,7 @@ export class OauthService {
             usr: user.username,
             app: appId,
             scp: limitScopeToMax(scope),
+            lvl: level,
         };
 
         const accessToken = await this.jwtService.signAsync(accessPayload, {
@@ -244,6 +247,18 @@ export class OauthService {
 
         await prisma.auth.delete({
             where: { userId_appId: { userId, appId } },
+        });
+    }
+    
+    async revokeAppSub(userId: bigint, appId: bigint): Promise<any> {
+        if (!(await this.hasAuthInfo(userId, appId)))
+            throw new BadRequestException();
+
+        await prisma.auth.update({
+            where: { userId_appId: { userId, appId } },
+            data: {
+                lastSubRevoke: new Date(),
+            }
         });
     }
 
@@ -326,6 +341,7 @@ export class OauthService {
         userId: bigint,
         appId: bigint,
         scope: number,
+        level: TokenLevel,
     ): Promise<any> {
         if (!(await this.usersService.existsId(userId)))
             throw new UnauthorizedException();
@@ -342,10 +358,11 @@ export class OauthService {
             usr: user.username,
             app: appId,
             scp: limitScopeToMax(scope),
+            lvl: level,
         };
 
         const accessToken = await this.jwtService.signAsync(accessPayload, {
-            expiresIn: jwtConstants.accessExpiry,
+            expiresIn: level == TokenLevel.OAUTH ? jwtConstants.accessExpiry : jwtConstants.subtokenAccessExpiry,
             secret: authInfo.jwtSecret,
         });
 
@@ -375,6 +392,6 @@ export class OauthService {
         if (!(await this.hasAuthInfo(userId, appId)))
             throw new UnauthorizedException();
 
-        return await this.createToken(userId, appId, scope, jwtConstants.subtokenAccessExpiry, jwtConstants.subtokenRefreshExpiry);
+        return await this.createToken(userId, appId, scope, TokenLevel.OAUTH_SUBTOKEN, jwtConstants.subtokenAccessExpiry, jwtConstants.subtokenRefreshExpiry);
     }
 }

@@ -94,11 +94,12 @@ model Redirect {
 }
 
 model Auth {
-  User        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId      BigInt
-  Application Application @relation(fields: [appId], references: [id], onDelete: Cascade)
-  appId       BigInt      @map("applicationId")
-  authedAt    DateTime
+  User          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId        BigInt
+  Application   Application @relation(fields: [appId], references: [id], onDelete: Cascade)
+  appId         BigInt      @map("applicationId")
+  authedAt      DateTime
+  lastSubRevoke DateTime?
 
   jwtSecret String
 
