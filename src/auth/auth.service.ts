@@ -50,32 +50,7 @@ export class AuthService {
         if (!user?.passHash || !(await argon2.verify(user?.passHash, pass)))
             throw new UnauthorizedException();
 
-        if (user.mfaMethods.length > 0) {
-            let mfaSuccess = false;
-            const mfaMethod = user.mfaMethods.find(
-                (m) => m.method == mfa.method,
-            );
-            if (mfaMethod) {
-                switch (mfa.method) {
-                    case 'TOTP':
-                        mfaSuccess = totpIsValid(
-                            mfa.credential,
-                            mfaMethod.secret,
-                        );
-                        break;
-                    case 'WEB_AUTHN':
-                        let passkeys = await this.usersService.getPasskeys(user);
-                        mfaSuccess = await webAuthnIsValid(
-                            user.id,
-                            passkeys,
-                            mfa.credential
-                        );
-                        break;
-                }
-            }
-
-            if (!mfaSuccess) throw new UnauthorizedException();
-        }
+        await this.checkMfa(user, mfa);
 
         const accessPayload = {
             typ: 'a',
@@ -108,6 +83,38 @@ export class AuthService {
             accessToken,
             refreshToken,
         };
+    }
+
+    async checkMfa(user: User | any, mfa?: { method: MFAMethod; credential: string }) {
+        if (user.mfaMethods && user.mfaMethods.length > 0) {
+            if (!mfa)
+                throw new PreconditionFailedException();
+
+            let mfaSuccess = false;
+            const mfaMethod = user.mfaMethods.find(
+                (m) => m.method == mfa.method,
+            );
+            if (mfaMethod) {
+                switch (mfa.method) {
+                    case 'TOTP':
+                        mfaSuccess = totpIsValid(
+                            mfa.credential,
+                            mfaMethod.secret,
+                        );
+                        break;
+                    case 'WEB_AUTHN':
+                        let passkeys = await this.usersService.getPasskeys(user);
+                        mfaSuccess = await webAuthnIsValid(
+                            user.id,
+                            passkeys,
+                            mfa.credential
+                        );
+                        break;
+                }
+            }
+
+            if (!mfaSuccess) throw new UnauthorizedException();
+        }
     }
 
     async createAccount(username: string, email: string, pass: string) {

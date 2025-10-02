@@ -43,6 +43,7 @@ import { protocolPorts } from 'src/email';
 import { redeemDiscordOAuthCode, redeemGitHubOAuthCode } from 'src/social';
 import { generateWebAuthnRegistrationOptions, verifyWebAuthnRegistrationResponse } from 'src/mfa';
 import type { RegistrationResponseJSON } from '@simplewebauthn/types';
+import { MFAMethod } from '@prisma/client';
 
 @ApiTags('auth')
 @Controller('auth')
@@ -278,10 +279,11 @@ export class AuthController {
     @RateLimit(RateLimitEnv('auth/delete', 5))
     @Post('delete')
     @UseAuth(Token.ACCESS, { account: true })
-    accountDelete(
+    async accountDelete(
         @Request() req,
-        @Body() body: { password?: string },
+        @Body() body: { password?: string, mfa?: { method: MFAMethod, credential: string } },
     ) {
+        await this.authService.checkMfa(req.user, body.mfa);
         return this.authService.handleDeleteAccount(req.user.id, body.password);
     }
 
@@ -322,7 +324,7 @@ export class AuthController {
     @RateLimit(RateLimitEnv('auth/totp', 10))
     @Delete('totp')
     @UseAuth(Token.ACCESS, { account: true })
-    removeTotp(
+    async removeTotp(
         @Request() req,
         @Body() body: { credential: string },
     ) {
@@ -332,15 +334,18 @@ export class AuthController {
         );
     }
 
-    @ApiOperation({ summary: 'Add TOTP to account' })
+    @ApiOperation({ summary: 'Get TOTP code for account' })
     @ApiOkResponse({ description: 'Success' })
     @ApiForbiddenResponse({ description: 'Forbidden' })
     @RateLimit(RateLimitEnv('auth/totp', 10))
     @Get('totp')
     @UseAuth(Token.ACCESS, { account: true })
-    getTotp(
+    async getTotp(
         @Request() req,
+        @Body() body: { mfa?: { method: MFAMethod, credential: string } }
     ) {
+        await this.authService.checkMfa(req.user, body.mfa);
+
         let totpMethod = req.user.mfaMethods.find(m => m.method == 'TOTP');
         return {
             success: !!totpMethod,
